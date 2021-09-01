@@ -1,0 +1,244 @@
+﻿@page "/"
+@using AntDesign.Charts
+@using Microsoft.AspNetCore.SignalR.Client;
+@using Blazor.Quartz.Core.Hubs
+@using Blazor.Quartz.Core.Service.App
+@using Blazor.Quartz.Core.Service.App.Dto
+@using Blazor.Quartz.Core.Service.Timer.Dto
+@using Blazor.Quartz.Core.Service.Timer
+@using System.Linq
+@*@inject HttpClient Http*@
+@inject NotificationService _notice
+@inject IAppService appservice
+@inject IJobLogService joblogservice
+@inject SchedulerCenter scheduler
+@inject IConfiguration Configuration
+
+<div>
+    <Row>
+        <Col Span="6">
+        <Card Title="应用数量" Style="max-width:300px;">
+            <Extra>
+                <a href="/application">查看</a>
+            </Extra>
+            <Body>
+                @app_count
+            </Body>
+        </Card>
+        </Col>
+        <Col Span="6">
+        <Card Title="作业数量" Style="max-width:300px;">
+            <Extra>
+                <a href="/job">查看</a>
+            </Extra>
+            <Body>
+                @job_count
+            </Body>
+        </Card>
+        </Col>
+    </Row>
+    <Divider Orientation="left" Plain>作业执行统计</Divider>
+    <Row>
+        <Col Span="24">
+        @if (isshow)
+        {
+            <Line Data="data" Config="config" />
+        }
+        </Col>
+    </Row>
+</div>
+@code{
+    private bool isshow = false;
+    int app_count = 0;
+    int job_count = 0;
+
+    List<object> data = new List<object>();
+
+
+    LineConfig config = new LineConfig()
+    {
+        Title = new AntDesign.Charts.Title()
+        {
+            Visible = true,
+            Text = "作业执行折线图",
+        },
+        Description = new Description()
+        {
+            Visible = true,
+            Text = "显示最近12小时内的任务执行数量",
+        },
+        Padding = "auto",
+        ForceFit = true,
+        XField = "hours",
+        YField = "数量",
+        Smooth = true,
+    };
+
+    #region SignalR相关
+    // flag to indicate chat status
+    private bool _isChatting = false;
+
+    // name of the user who will be chatting
+    private string _username = "456";
+
+    // on-screen message
+    private string _message;
+
+    // new message input
+    private string _newMessage;
+
+    // list of messages in chat
+    private List<Message> _messages = new List<Message>();
+
+    private string _hubUrl;
+    private HubConnection _hubConnection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //HttpClient client = new HttpClient();
+        //StringContent queryString = new StringContent("");
+        //await Http.PostAsync($"https://localhost:44376/api/Notify/NotifyLogin", queryString);
+
+        //string baseUrl = "https://localhost:44376/";
+
+        //_hubUrl = baseUrl.TrimEnd('/') + NotifyHub.HubUrl;
+
+        //_hubConnection = new HubConnectionBuilder()
+        //    .WithUrl(_hubUrl)
+        //    .Build();
+
+        //_hubConnection.On<string, string>("Broadcast", BroadcastMessage);
+        //客户端发保持连接请求到服务端最长间隔
+        //_hubConnection.KeepAliveInterval = TimeSpan.FromMinutes(4);
+        //服务端发保持连接请求到客户端间隔
+        //_hubConnection.ServerTimeout = TimeSpan.FromMinutes(4);
+        //await _hubConnection.StartAsync();
+
+        await LoadData();
+    }
+
+    public async Task Chat()
+    {
+        // check username is valid
+        if (string.IsNullOrWhiteSpace(_username))
+        {
+            _message = "Please enter a name";
+            return;
+        };
+
+        try
+        {
+            // Start chatting and force refresh UI.
+            _isChatting = true;
+            await Task.Delay(1);
+
+            // remove old messages if any
+            _messages.Clear();
+
+            // Create the chat client
+            string baseUrl = "/";
+
+            _hubUrl = baseUrl.TrimEnd('/') + NotifyHub.HubUrl;
+
+            _hubConnection = new HubConnectionBuilder()
+                .WithUrl(_hubUrl)
+                .Build();
+
+            _hubConnection.On<string, string>("Broadcast", BroadcastMessage);
+
+            await _hubConnection.StartAsync();
+
+            await SendAsync($"[Notice] {_username} joined chat room.");
+        }
+        catch (Exception e)
+        {
+            _message = $"ERROR: Failed to start chat client: {e.Message}";
+            _isChatting = false;
+        }
+    }
+
+    private void BroadcastMessage(string name, string message)
+    {
+        _notice.Open(new NotificationConfig()
+        {
+            Message = "通知",
+            Duration = 3.5,
+            Description = message
+        });
+        bool isMine = name.Equals(_username, StringComparison.OrdinalIgnoreCase);
+
+        _messages.Add(new Message(name, message, isMine));
+
+        // Inform blazor the UI needs updating
+        StateHasChanged();
+    }
+
+    private async Task DisconnectAsync()
+    {
+        if (_isChatting)
+        {
+            await SendAsync($"[Notice] {_username} left chat room.");
+
+            await _hubConnection.StopAsync();
+            await _hubConnection.DisposeAsync();
+
+            _hubConnection = null;
+            _isChatting = false;
+        }
+    }
+
+    private async Task SendAsync(string message)
+    {
+        if (_isChatting && !string.IsNullOrWhiteSpace(message))
+        {
+            await _hubConnection.SendAsync("Broadcast", _username, message);
+
+            _newMessage = string.Empty;
+        }
+    }
+
+    private class Message
+    {
+        public Message(string username, string body, bool mine)
+        {
+            Username = username;
+            Body = body;
+            Mine = mine;
+        }
+
+        public string Username { get; set; }
+        public string Body { get; set; }
+        public bool Mine { get; set; }
+
+        public bool IsNotice => Body.StartsWith("[Notice]");
+
+        public string CSS => Mine ? "sent" : "received";
+    }
+
+    /// <summary>
+    /// 加载数据
+    /// </summary>
+    /// <returns></returns>
+    private async Task LoadData()
+    {
+        var queryDto = new QueryModel();
+        var applist = await appservice.GetList(queryDto);
+        app_count = applist.Data.Count();
+        var joblist = await scheduler.GetAllJobBriefInfoAsync_New();
+        job_count = joblist.Count();
+        var querylogDto = new QueryLogDto();
+        var start_time = DateTime.Now.AddHours(-11);
+        var end_time = DateTime.Now;
+        querylogDto.start_time = start_time.ToString("yyyy-MM-dd HH:mm:ss");
+        querylogDto.end_time = end_time.ToString("yyyy-MM-dd HH:mm:ss");
+        var job_logs = await joblogservice.GetList(querylogDto);
+        for (DateTime i = start_time; i < end_time; i = i.AddHours(1))
+        {
+            var count = job_logs.Where(o => Convert.ToDateTime(o.BEGIN_TIME).ToString("yyyy-MM-dd HH") == i.ToString("yyyy-MM-dd HH")).Count();
+            data.Add(new { hours = i.ToString("HH"), 数量 = count });
+        }
+        isshow = true;
+    }
+
+    #endregion
+}

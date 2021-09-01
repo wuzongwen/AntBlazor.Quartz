@@ -1,0 +1,303 @@
+﻿@page "/job"
+@using Blazor.Quartz.Core.Service.Timer.Dto
+@using Blazor.Quartz.Core.Service.Timer
+@using Blazor.Quartz.Core.Service.App.Enum
+@using Blazor.Quartz.Core.Service.App.Dto
+@using Blazor.Quartz.Core.Service.Base.Dto
+@inject DrawerService DrawerService
+@inject ConfirmService confirmService
+@inject MessageService _message
+@inject ModalService _modalService
+@inject IConfiguration Configuration
+@inject SchedulerCenter scheduler
+@inject NavigationManager Nav
+<PageHeader Title="任务列表">
+    <PageHeaderContent>
+        <Form Layout="@FormLayout.Inline" Model="queryDto">
+            <FormItem Label="任务名称">
+                <Input @bind-Value="queryDto.Name" />
+            </FormItem>
+            <FormItem>
+                <Button Type="@ButtonType.Primary" OnClick="OnInitializedAsync">检索</Button>
+            </FormItem>
+            <FormItem>
+                <Button Type="@ButtonType.Primary" OnClick="OnReset">重置</Button>
+            </FormItem>
+        </Form>
+    </PageHeaderContent>
+    <PageHeaderExtra>
+        <Button Type="@ButtonType.Primary" OnClick="@(()=>AddApplication(null,null))">新增任务</Button>
+    </PageHeaderExtra>
+</PageHeader>
+<Table DataSource="@jobItems" Bordered=@true Loading="@isLoading" Size=@TableSize.Middle>
+    <Column @bind-Field="@context.GroupName" Title="应用"></Column>
+    <Column @bind-Field="@context.Name"></Column>
+    <Column @bind-Field="@context.NextFireTime"></Column>
+    <Column @bind-Field="@context.PreviousFireTime"></Column>
+    <Column @bind-Field="@context.DisplayState">
+        @{
+            var color = "";
+            switch (context.DisplayState)
+            {
+                case "正常":
+                    color = "green";
+                    break;
+                case "暂停":
+                    color = "red";
+                    break;
+                case "完成":
+                    color = "cadetblue";
+                    break;
+                case "异常":
+                    color = "goldenrod";
+                    break;
+                case "阻塞":
+                case "不存在":
+                default:
+                    color = "gray";
+                    break;
+            }
+            <Tag Color="@color">@context.DisplayState</Tag>
+        }
+    </Column>
+    <Column @bind-Field="@context.RunNumber"></Column>
+    <Column @bind-Field="@context.ErrorNumber" Title="异常次数">
+        <span style="color: #ff0000 ">@context.ErrorNumber</span>
+    </Column>
+    <ActionColumn Title="操作">
+        <Space Size="middle">
+            <SpaceItem>
+                @{
+                    switch (context.TriggerState)
+                    {
+                        case global::Quartz.TriggerState.Normal:
+                            <Button Danger OnClick="@(()=>Pause(context.GroupName,context.Name,AppStatusEnum.Disable))">
+                                停用
+                            </Button>
+                            break;
+                        case global::Quartz.TriggerState.Paused:
+                            <Button Type="primary" Ghost OnClick="@(()=>Pause(context.GroupName,context.Name,AppStatusEnum.Enable))">
+                                启用
+                            </Button>
+                            break;
+                        case global::Quartz.TriggerState.Complete:
+                        case global::Quartz.TriggerState.Error:
+                        case global::Quartz.TriggerState.Blocked:
+                        case global::Quartz.TriggerState.None:
+                        default:
+
+                            break;
+                    }
+                }
+            </SpaceItem>
+            <SpaceItem>
+                <Popconfirm Title="删除任务将会删除该任务的所有执行记录，确认删除任务吗?"
+                            OnConfirm="@(()=>DeleteJob(context.GroupName,context.Name))"
+                            OnCancel="Cancel"
+                            OkText="是"
+                            CancelText="否">
+                    <Button Danger>删除</Button>
+                </Popconfirm>
+            </SpaceItem>
+            <SpaceItem>
+                <Button OnClick="@(()=>AddApplication(context.GroupName,context.Name))">
+                    编辑
+                </Button>
+            </SpaceItem>
+            <SpaceItem>
+                <Button OnClick="@(()=>GetLog(context.GroupName,context.Name))">
+                    查看日志
+                </Button>
+            </SpaceItem>
+        </Space>
+    </ActionColumn>
+</Table>
+@code{
+    private List<JobBriefInfo> jobItems;
+
+    private QueryDto queryDto = new QueryDto();
+
+    bool isLoading = false;
+
+    /// <summary>
+    /// 取消删除
+    /// </summary>
+    private void Cancel()
+    {
+        //_message.Error("Clicked on No");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            //var response = await Http.GetAsync($"{Configuration["ApiUri"]}/api/file/getlist?name={queryDto.Name}");
+            //HttpClient client = new HttpClient();
+            //StringContent queryString = new StringContent("");
+            //var res = await Http.PostAsync("http://api/Home/GetHomePageInfo", queryString);
+            //var errorResult = await res.Content.ReadAsStringAsync();
+            //if (response.IsSuccessStatusCode)
+            //{
+            //todoItems = await response.Content.ReadFromJsonAsync<Data[]>();
+            //}
+            //else
+            //{
+            //await _message.Error("系统繁忙请稍后重试");
+            //}
+            await LoadTable();
+
+            isLoading = false;
+        }
+        catch (Exception ex)
+        {
+            await _message.Error(ex.Message);
+        }
+    }
+
+    private async Task OnReset()
+    {
+        queryDto = new QueryDto();
+        await OnInitializedAsync();
+    }
+
+    private string value = null;
+
+    /// <summary>
+    /// 添加
+    /// </summary>
+    /// <returns></returns>
+    private async Task AddApplication(string JOB_GROUP_NAME, string JOB_NAME)
+    {
+        var options = new DrawerOptions()
+        {
+            Title = "新增任务",
+            Width = 500,
+            BodyStyle = "paddingBottom: 80"
+        };
+
+        value = null;
+        if (JOB_GROUP_NAME != null && JOB_NAME != null)
+        {
+            ScheduleEntity JobInfo = await scheduler.QueryJobAsync(JOB_GROUP_NAME, JOB_NAME);
+            value = JsonConvert.SerializeObject(JobInfo);
+        }
+
+        var drawerRef = await DrawerService.CreateAsync<JobDetail, string, string>(options, value);
+
+        drawerRef.OnOpen = () =>
+        {
+            Console.WriteLine("OnAfterOpen");
+            return Task.CompletedTask;
+        };
+
+        drawerRef.OnClosing = async handle =>
+        {
+            Console.WriteLine("OnAfterClosing:");
+            await Task.CompletedTask;
+        //if (await confirmService.Show("取消后填写的数据将销毁?", "确定取消?", ConfirmButtons.YesNo) == ConfirmResult.No)
+        //{
+        //    handle.Reject();
+        //}
+    };
+
+        drawerRef.OnClosed = async result =>
+        {
+            Console.WriteLine("OnAfterClosed:" + result);
+            if (result != null)
+            {
+                if (result == "true")
+                {
+                ////跳转
+                //Nav.NavigateTo("job");
+
+                //重载数据
+                var data = await scheduler.GetAllJobBriefInfoAsync_New();
+                    jobItems = new List<JobBriefInfo>();
+                    if (data.Count > 0)
+                    {
+                        jobItems = data;
+                    }
+
+                ////重载页面
+                //await OnInitializedAsync();
+
+
+            }
+            }
+            await InvokeAsync(StateHasChanged);
+        };
+    }
+
+    /// <summary>
+    /// 暂停/启用
+    /// </summary>
+    /// <returns></returns>
+    private async Task Pause(string JOB_GROUP_NAME, string JOB_NAME, AppStatusEnum IS_ENABLE)
+    {
+        var res = new BaseResult();
+        switch (IS_ENABLE)
+        {
+            case AppStatusEnum.Enable:
+                res = await scheduler.ResumeJobAsync(JOB_GROUP_NAME, JOB_NAME);
+                break;
+            case AppStatusEnum.Disable:
+                res = await scheduler.StopOrDelScheduleJobAsync(JOB_GROUP_NAME, JOB_NAME);
+                break;
+        }
+
+        if (res.Code == 200)
+        {
+            await LoadTable();
+            await _message.Success(res.Msg, 0.5);
+        }
+        else
+        {
+            await _message.Error(res.Msg);
+        }
+    }
+
+    /// <summary>
+    /// 删除任务
+    /// </summary>
+    /// <param name="JOB_GROUP_NAME"></param>
+    /// <param name="JOB_NAME"></param>
+    /// <returns></returns>
+    private async Task DeleteJob(string JOB_GROUP_NAME, string JOB_NAME)
+    {
+        var res = await scheduler.StopOrDelScheduleJobAsync(JOB_GROUP_NAME, JOB_NAME, true);
+        if (res.Code == 200)
+        {
+            await LoadTable();
+            await _message.Success(res.Msg, 0.5);
+        }
+        else
+        {
+            await _message.Error(res.Msg);
+        }
+    }
+
+    /// <summary>
+    /// 查询日志
+    /// </summary>
+    /// <returns></returns>
+    private async Task GetLog(string JOB_GROUP_NAME, string JOB_NAME)
+    {
+        await _message.Warn("功能开发中", 0.5);
+        //var res = await scheduler.GetJobLogsByJobInfoAsync(JOB_GROUP_NAME, JOB_NAME);
+    }
+
+    /// <summary>
+    /// 加载表格
+    /// </summary>
+    /// <returns></returns>
+    private async Task LoadTable()
+    {
+        var data = await scheduler.GetAllJobBriefInfoAsync_New();
+        if (queryDto.Name != null)
+        {
+            data = data.Where(o => o.Name.Contains(queryDto.Name)).ToList();
+        }
+        jobItems = data;
+    }
+}

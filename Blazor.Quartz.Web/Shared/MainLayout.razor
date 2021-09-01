@@ -1,0 +1,29 @@
+﻿@inherits LayoutComponentBase
+@inject NotificationService _notice
+
+<div class="sidebar">
+    <NavMenu />
+</div>
+
+<div class="main">
+    <div class="top-row px-4">
+        <Button Type="@ButtonType.Link" OnClick="@OnClick">
+            关于
+        </Button>
+    </div>
+
+    <div class="content px-4">
+        @Body
+    </div>
+</div>
+@code{
+    private async Task OnClick()
+    {
+        await _notice.Open(new NotificationConfig()
+        {
+            Message = "关于",
+            Duration = 3.5,
+            Description = "这是一个任务调度平台"
+        });
+    }
+}

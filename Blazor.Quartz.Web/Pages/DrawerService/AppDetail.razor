@@ -1,0 +1,146 @@
+﻿@namespace AntDesign
+@using Blazor.Quartz.Core.Service.App
+@using Blazor.Quartz.Core.Service.App.Dto
+@using Blazor.Quartz.Core.Service.App.Enum;
+@using System.ComponentModel.DataAnnotations
+@inherits DrawerTemplate<string, string>
+@inject IAppService appservice
+@inject ProtectedLocalStorage localstorage
+@inject MessageService _message
+
+<Form @ref="form" layout="vertical" Model="@model"
+      OnFinish="OnFinish"
+      OnFinishFailed="OnFinishFailed"
+      ValidateOnChange="true">
+    <ChildContent>
+        <FormItem Label="应用名称">
+            <Input Placeholder="应用名称" @bind-Value="@context.JOB_GROUP_NAME" OnChange="DataSave" TValue="string" />
+        </FormItem>
+        <FormItem Label="描述">
+            <TextArea @bind-Value="@context.DESCRIPTION" OnChange="DataSave"
+                      placeholder="请输入描述" />
+        </FormItem>
+        <FormItem Label="状态">
+            <RadioGroup @bind-Value="@context.IS_ENABLE" OnChange="RadioOnChange" TValue="AppStatusEnum">
+                <Radio RadioButton Value="@AppStatusEnum.Enable">启用</Radio>
+                <Radio RadioButton Value="@AppStatusEnum.Disable">停用</Radio>
+            </RadioGroup>
+        </FormItem>
+        @{ if (AlertShow)
+            {
+                <FormItem>
+                    <Alert Message="@AlertMessage" Type="@AlertType.Error" />
+                </FormItem>
+            }
+        }
+        <FormItem WrapperColOffset="8" Style="text-align:right" WrapperColSpan="16">
+            <Button Type="@ButtonType.Primary" HtmlType="submit" OnClick="OnValidate">
+                提交
+            </Button>
+        </FormItem>
+    </ChildContent>
+</Form>
+
+@code{
+
+    string value;
+    string localstorage_key = "appinfo";
+    private bool AlertShow;
+    private string AlertMessage;
+    private AppInfo model;
+
+    protected override async Task OnInitializedAsync()
+    {
+        AlertShow = false;
+        //value = this.op?.ToString();
+
+        model = new AppInfo();
+        model.IS_ENABLE = AppStatusEnum.Enable;
+
+        if (string.IsNullOrEmpty(value))
+        {
+            var data = await localstorage.GetAsync<AppInfo>(localstorage_key);
+            if (data.Success)
+            {
+                model = data.Value;
+            }
+        }
+        else
+        {
+            var data = await appservice.GetModel(new AppInfo() { JOB_GROUP_NAME = value });
+            if (data.Code != 200)
+            {
+                await _message.Error(data.Msg);
+                await this.CloseAsync(value);
+            }
+        }
+
+        base.OnInitialized();
+    }
+
+    async void OnClose()
+    {
+        await this.CloseAsync(value);
+    }
+
+    //选择器事件
+    private void RadioOnChange(AppStatusEnum status)
+    {
+        DataSave();
+        model.IS_ENABLE = status;
+    }
+
+
+    private async Task OnFinish(EditContext editContext)
+    {
+        AlertShow = false;
+        AlertMessage = "";
+
+        Console.WriteLine($"Success:{JsonConvert.SerializeObject(model)}");
+
+        var res = await appservice.Add(model);
+        if (res.Code == 200)
+        {
+            //删除缓存
+            await localstorage.DeleteAsync(localstorage_key);
+
+            //关闭抽屉
+            await this.CloseAsync("true");
+
+            //提示
+            await _notice.Open(new NotificationConfig()
+            {
+                Message = "通知",
+                Duration = 3.5,
+                Description = "操作成功"
+            });
+        }
+        else
+        {
+            await _message.Error(res.Msg);
+        }
+    }
+
+    private void OnFinishFailed(EditContext editContext)
+    {
+        AlertShow = true;
+        AlertMessage = editContext.GetValidationMessages().FirstOrDefault().ToString();
+        Console.WriteLine($"Failed:{JsonConvert.SerializeObject(model)}");
+    }
+
+    //变更验证
+    Form<AppInfo> form;
+    public void OnValidate()
+    {
+        Console.WriteLine("验证");
+        form.Validate();
+    }
+
+    /// <summary>
+    /// 数据缓存
+    /// </summary>
+    private async void DataSave()
+    {
+        await localstorage.SetAsync(localstorage_key, model);
+    }
+}

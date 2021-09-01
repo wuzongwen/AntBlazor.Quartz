@@ -1,0 +1,267 @@
+﻿@namespace AntDesign
+@using Blazor.Quartz.Core.Service.Timer.Dto
+@using Blazor.Quartz.Core.Service.App
+@using Blazor.Quartz.Core.Service.Timer.Enum
+@using Blazor.Quartz.Core.Service.Timer
+@using Blazor.Quartz.Core.Service.App.Dto
+@using System.ComponentModel.DataAnnotations
+@inherits DrawerTemplate<string, string>
+@inject MessageService _message
+@inject ProtectedLocalStorage localstorage
+@inject SchedulerCenter scheduler
+@inject IAppService appservice
+
+<Form @ref="form" layout="vertical" Model="@model"
+      OnFinish="OnFinish"
+      OnFinishFailed="OnFinishFailed"
+      ValidateOnChange="true">
+    <ChildContent>
+        <FormItem Label="所属应用">
+            <Select DataSource="@appInfoList"
+                    OnSelectedItemChanged="OnSelectedItemChangedHandler"
+                    @bind-Value="@context.JobGroup"
+                    ValueName="@nameof(AppInfo.JOB_GROUP_NAME)"
+                    LabelName="@nameof(AppInfo.JOB_GROUP_NAME)"
+                    Placeholder="请选项任务所属应用"
+                    DefaultValue="@context.JobGroup"
+                    DefaultActiveFirstItem="false">
+            </Select>
+        </FormItem>
+        <FormItem Label="任务名称">
+            <Input Placeholder="请输入任务名称" @bind-Value="@context.JobName" OnChange="DataSave" TValue="string" />
+        </FormItem>
+        <FormItem Label="请求地址">
+            <Input Placeholder="请输入请求地址" @bind-Value="@context.RequestUrl" OnChange="DataSave" TValue="string" />
+        </FormItem>
+        <FormItem Label="请求类型">
+            <RadioGroup popupStyle="float:left" @bind-Value="@context.RequestType" OnChange="RequestTypeOnChange" TValue="RequestTypeEnum">
+                <Radio RadioButton Value="@RequestTypeEnum.Post">Post</Radio>
+                <Radio RadioButton Value="@RequestTypeEnum.Get">Get</Radio>
+                <Radio RadioButton Value="@RequestTypeEnum.Put">Put</Radio>
+                <Radio RadioButton Value="@RequestTypeEnum.Delete">Delete</Radio>
+            </RadioGroup>
+        </FormItem>
+        <FormItem Label="开始时间">
+            <DatePicker inputReadOnly @bind-Value="@context.BeginTime" OnChange="DataSave" TValue="DateTime" ShowTime="@true"
+                        DefaultValue="DateTime.Now"
+                        Format="yyyy-MM-dd HH:mm:ss" />
+        </FormItem>
+        <FormItem Label="结束时间">
+            <DatePicker inputReadOnly @bind-Value="@context.EndTime" OnChange="DataSave" TValue="DateTime?" ShowTime="@true"
+                        Format="yyyy-MM-dd HH:mm:ss"
+                        DisabledDate="date => date <= DateTime.Now" />
+        </FormItem>
+        <FormItem Label="触发器类型">
+            <RadioGroup @bind-Value="@context.TriggerType" OnChange="TriggerTypeOnChange" TValue="TriggerTypeEnum">
+                <Radio RadioButton Value="@TriggerTypeEnum.Cron">Cron</Radio>
+                <Radio RadioButton Value="@TriggerTypeEnum.Simple">Simple</Radio>
+            </RadioGroup>
+        </FormItem>
+        @{ switch (model.TriggerType)
+            {
+                case TriggerTypeEnum.Simple:
+                    <FormItem Label="间隔时间(单位/秒)">
+                        <AntDesign.InputNumber @bind-Value="@model.IntervalSecond" OnChange="DataSave" TValue="int?" Min="1" Max="99999" DefaultValue="10"></AntDesign.InputNumber>
+                    </FormItem>
+                    <FormItem Label="执行次数(默认无限循环)">
+                        <AntDesign.InputNumber @bind-Value="@model.RunTimes" Placeholder="默认无限循环" OnChange="DataSave" TValue="int?"  Min="1" Max="99999"></AntDesign.InputNumber>
+                    </FormItem>
+                    break;
+                case TriggerTypeEnum.Cron:
+                    <FormItem Label="Cron表达式">
+                        <Input Placeholder="0/30 * * * * ? 表示每30秒 执行任务" @bind-Value="@context.Cron" OnChange="DataSave" TValue="string" />
+                    </FormItem>
+                    break;
+            }
+        }
+        <FormItem Label="请求头">
+            <Input Placeholder="格式为Json键值对如{'authorization':'xxxxxx'}" @bind-Value="@context.Headers" OnChange="DataSave" TValue="string" />
+        </FormItem>
+        <FormItem Label="请求参数">
+            <Input Placeholder="格式为Json键值对如{'data':'data'}" @bind-Value="@context.RequestParameters" OnChange="DataSave" TValue="string" />
+        </FormItem>
+        <FormItem Label="任务描述">
+            <TextArea @bind-Value="@context.Description" OnChange="DataSave"
+                      placeholder="请输入任务描述" />
+        </FormItem>
+        @{ if (AlertShow)
+            {
+                <FormItem>
+                    <Alert Message="@AlertMessage" Type="@AlertType.Error" />
+                </FormItem>
+            }
+        }
+        <FormItem WrapperColOffset="8" Style="text-align:right" WrapperColSpan="16">
+            <Button Type="@ButtonType.Primary" HtmlType="submit" OnClick="OnValidate">
+                提交
+            </Button>
+        </FormItem>
+    </ChildContent>
+</Form>
+
+@code{
+
+    string value;
+    int actionType = 0;
+    string localstorage_key = "jobinfo";
+    private bool AlertShow;
+    private string AlertMessage;
+    private ScheduleEntity model;
+    private List<AppInfo> appInfoList;
+
+    /// <summary>
+    /// 秒渲染片段
+    /// </summary>
+    RenderFragment IntervalSecondRender = (builder) => builder.AddMarkupContent(0, "<div>秒</div>");
+
+    protected override async Task OnInitializedAsync()
+    {
+        AlertShow = false;
+
+        model = new ScheduleEntity();
+        model.JobType = JobTypeEnum.Url;
+        model.TriggerType = TriggerTypeEnum.Cron;
+        model.JobGroup = "";
+
+        var data = new ScheduleEntity();
+        data = null;
+        if (this.Options != null)
+        {
+            actionType = 1;
+            data = JsonConvert.DeserializeObject<ScheduleEntity>(this.Options.ToString());
+        }
+        else
+        {
+            var res = await localstorage.GetAsync<ScheduleEntity>(localstorage_key);
+            if (res.Success)
+            {
+                data = res.Value;
+            }
+        }
+        if (data != null)
+        {
+            model.JobGroup = data.JobGroup;
+            model.JobName = data.JobName;
+            model.RequestUrl = data.RequestUrl;
+            model.RequestType = data.RequestType;
+            model.TriggerType = data.TriggerType;
+            model.Cron = data.Cron;
+            model.IntervalSecond = data.IntervalSecond;
+            model.Headers = data.Headers;
+            model.RequestParameters = data.RequestParameters;
+            model.Description = data.Description;
+        }
+
+        //获取应用列表
+        var appInfoListRes = await appservice.GetList(new QueryModel());
+        appInfoList = appInfoListRes.Data;
+        if (appInfoList.Count() < 1)
+        {
+            OnClose();
+            await _message.Error("请先添加应用");
+        }
+
+        base.OnInitialized();
+    }
+
+
+    async void OnClose()
+    {
+        await this.CloseAsync(value);
+    }
+
+    //选择器事件
+    private void OnChangeSize(JobTypeEnum value)
+    {
+        model.JobType = value;
+        Console.WriteLine($"selected value: ${value}");
+    }
+
+    //选择器事件
+    private void RequestTypeOnChange(RequestTypeEnum value)
+    {
+        DataSave();
+        model.RequestType = value;
+        Console.WriteLine($"selected value: ${value}");
+    }
+
+    //触发器类型选择器事件
+    private void TriggerTypeOnChange(TriggerTypeEnum value)
+    {
+        model.TriggerType = value;
+        model.Cron = "";
+        model.IntervalSecond = 0;
+        model.RunTimes = null;
+        DataSave();
+        Console.WriteLine($"selected value: ${value}");
+    }
+
+    /// <summary>
+    /// 成功事件
+    /// </summary>
+    /// <param name="editContext"></param>
+    /// <returns></returns>
+    private async Task OnFinish(EditContext editContext)
+    {
+        AlertShow = false;
+        AlertMessage = "";
+
+        Console.WriteLine($"Success:{JsonConvert.SerializeObject(model)}");
+
+        var res = await scheduler.AddScheduleJobAsync(model, actionType);
+        if (res.Code == 200)
+        {
+            //删除缓存
+            await localstorage.DeleteAsync(localstorage_key);
+
+            //关闭抽屉
+            await this.CloseAsync("true");
+
+            //提示
+            await _notice.Open(new NotificationConfig()
+            {
+                Message = "通知",
+                Duration = 3.5,
+                Description = "操作成功"
+            });
+        }
+        else
+        {
+            await _message.Error(res.Msg);
+        }
+    }
+
+    /// <summary>
+    /// 失败事件
+    /// </summary>
+    /// <param name="editContext"></param>
+    private void OnFinishFailed(EditContext editContext)
+    {
+        AlertShow = true;
+        AlertMessage = editContext.GetValidationMessages().FirstOrDefault().ToString();
+        Console.WriteLine($"Failed:{JsonConvert.SerializeObject(model)}");
+    }
+
+    //变更验证
+    Form<ScheduleEntity> form;
+    public void OnValidate()
+    {
+        form.Validate();
+    }
+
+    private void OnSelectedItemChangedHandler(AppInfo app)
+    {
+        if(app!=null)
+            model.JobGroup = app.JOB_GROUP_NAME;
+        DataSave();
+    }
+
+    /// <summary>
+    /// 数据缓存
+    /// </summary>
+    private async void DataSave()
+    {
+        if (this.Options == null)
+            await localstorage.SetAsync(localstorage_key, model);
+    }
+}

@@ -1,0 +1,211 @@
+﻿@page "/application"
+@using Blazor.Quartz.Core.Service.App
+@using Blazor.Quartz.Core.Service.App.Dto
+@using Blazor.Quartz.Core.Service.App.Enum;
+@inject DrawerService DrawerService
+@inject MessageService _message
+@inject IConfiguration Configuration
+@inject IAppService appservice
+<PageHeader Title="应用列表">
+    <PageHeaderContent>
+        <Form Layout="@FormLayout.Inline" Model="queryDto">
+            <FormItem Label="任务名称">
+                <Input @bind-Value="queryDto.JOB_GROUP_NAME" />
+            </FormItem>
+            <FormItem>
+                <Button Type="@ButtonType.Primary" OnClick="OnInitializedAsync">检索</Button>
+            </FormItem>
+            <FormItem>
+                <Button Type="@ButtonType.Primary" OnClick="OnReset">重置</Button>
+            </FormItem>
+        </Form>
+    </PageHeaderContent>
+    <PageHeaderExtra>
+        <Button Type="@ButtonType.Primary" OnClick="AddApplication">添加应用</Button>
+    </PageHeaderExtra>
+</PageHeader>
+<Table DataSource="@tableModel" Bordered=@true Loading="@isLoading" Size=@TableSize.Middle>
+    <Column @bind-Field="@context.JOB_GROUP_NAME"></Column>
+    <Column @bind-Field="@context.DESCRIPTION" Ellipsis></Column>
+    <Column @bind-Field="@context.IS_ENABLE" Ellipsis>
+        @{
+            var color = context.IS_ENABLE == AppStatusEnum.Enable ? "green" : "red";
+            var tag = context.IS_ENABLE == AppStatusEnum.Enable ? "启用" : "停用";
+            <Tag Color="@color">@tag</Tag>
+        }
+    </Column>
+    <ActionColumn Title="操作">
+        <Space Size="middle">
+            <SpaceItem>
+                @{
+                    switch (context.IS_ENABLE)
+                    {
+                        case AppStatusEnum.Enable:
+                            <Button Type="primary" Danger OnClick="@(()=>Pause(context.JOB_GROUP_NAME,context.IS_ENABLE))">
+                                停用
+                            </Button>
+                            break;
+                        case AppStatusEnum.Disable:
+                            <Button Type="primary" Block OnClick="@(()=>Pause(context.JOB_GROUP_NAME,context.IS_ENABLE))">
+                                启用
+                            </Button>
+                            break;
+                    }
+                }
+            </SpaceItem>
+            <SpaceItem>
+                <Button Type="primary" Danger OnClick="@(()=>Delete(context.JOB_GROUP_NAME))">
+                    删除
+                </Button>
+            </SpaceItem>
+        </Space>
+    </ActionColumn>
+</Table>
+@code{
+    private List<AppInfo> tableModel;
+
+    private QueryModel queryDto = new QueryModel();
+
+    bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            //var response = await Http.GetAsync($"{Configuration["ApiUri"]}/api/file/getlist?name={queryDto.Name}");
+            //HttpClient client = new HttpClient();
+            //StringContent queryString = new StringContent("");
+            //var res = await Http.PostAsync("http://rh-api-test.4001616360.com/api/Home/GetHomePageInfo", queryString);
+            //var errorResult = await res.Content.ReadAsStringAsync();
+            //if (response.IsSuccessStatusCode)
+            //{
+            //todoItems = await response.Content.ReadFromJsonAsync<Data[]>();
+            //}
+            //else
+            //{
+            //await _message.Error("系统繁忙请稍后重试");
+            //}
+            await LoadTable();
+
+            isLoading = false;
+        }
+        catch (Exception ex)
+        {
+            await _message.Error(ex.Message);
+        }
+
+    }
+
+    private async Task OnReset()
+    {
+        queryDto = new QueryModel();
+        await OnInitializedAsync();
+    }
+
+    private string value = "";
+
+    /// <summary>
+    /// 添加应用
+    /// </summary>
+    /// <returns></returns>
+    private async Task AddApplication()
+    {
+        var options = new DrawerOptions()
+        {
+            Title = "新增应用",
+            Width = 350,
+        };
+
+        var drawerRef = await DrawerService.CreateAsync<AppDetail, string, string>(options, value);
+
+        drawerRef.OnOpen = () =>
+        {
+            Console.WriteLine("OnAfterOpen");
+            return Task.CompletedTask;
+        };
+
+        drawerRef.OnClosing = async handle =>
+        {
+            Console.WriteLine("OnAfterClosing:");
+
+            //if (await confirmService.Show("取消后填写的数据将销毁?", "确定取消?", ConfirmButtons.YesNo) == ConfirmResult.No)
+            //{
+            //    handle.Reject();
+            //}
+            await Task.CompletedTask;
+        };
+
+        drawerRef.OnClosed = async result =>
+        {
+            await LoadTable();
+            Console.WriteLine("OnAfterClosed:" + result);
+            if (result != null)
+                value = result;
+            await InvokeAsync(StateHasChanged);
+        };
+    }
+
+    /// <summary>
+    /// 暂停/启用
+    /// </summary>
+    /// <returns></returns>
+    private async Task Pause(string JOB_GROUP_NAME, AppStatusEnum IS_ENABLE)
+    {
+        var appinfo = new AppInfo()
+        {
+            JOB_GROUP_NAME = JOB_GROUP_NAME,
+            IS_ENABLE = IS_ENABLE == AppStatusEnum.Enable ? AppStatusEnum.Disable : AppStatusEnum.Enable
+        };
+        var res = await appservice.Edit(appinfo);
+        if (res.Code == 200)
+        {
+            await LoadTable();
+            await _message.Success(res.Msg, 0.5);
+        }
+        else
+        {
+            await _message.Error(res.Msg);
+        }
+    }
+
+
+    /// <summary>
+    /// 删除
+    /// </summary>
+    /// <returns></returns>
+    private async Task Delete(string JOB_GROUP_NAME)
+    {
+        var appinfo = new AppInfo()
+        {
+            JOB_GROUP_NAME = JOB_GROUP_NAME
+        };
+        var res = await appservice.Delete(appinfo);
+        if (res.Code == 200)
+        {
+            await LoadTable();
+            await _message.Success(res.Msg, 0.5);
+        }
+        else
+        {
+            await _message.Error(res.Msg);
+        }
+    }
+
+    /// <summary>
+    /// 加载表格
+    /// </summary>
+    /// <returns></returns>
+    private async Task LoadTable()
+    {
+        var res = await appservice.GetList(queryDto);
+        if (res.Code == 200)
+        {
+            tableModel = res.Data;
+        }
+        else
+        {
+            await _message.Error(res.Msg);
+        }
+    }
+}
