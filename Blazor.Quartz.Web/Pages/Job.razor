@@ -195,11 +195,11 @@
         {
             Console.WriteLine("OnAfterClosing:");
             await Task.CompletedTask;
-        //if (await confirmService.Show("取消后填写的数据将销毁?", "确定取消?", ConfirmButtons.YesNo) == ConfirmResult.No)
-        //{
-        //    handle.Reject();
-        //}
-    };
+            //if (await confirmService.Show("取消后填写的数据将销毁?", "确定取消?", ConfirmButtons.YesNo) == ConfirmResult.No)
+            //{
+            //    handle.Reject();
+            //}
+        };
 
         drawerRef.OnClosed = async result =>
         {
@@ -208,22 +208,22 @@
             {
                 if (result == "true")
                 {
-                ////跳转
-                //Nav.NavigateTo("job");
+                    ////跳转
+                    //Nav.NavigateTo("job");
 
-                //重载数据
-                var data = await scheduler.GetAllJobBriefInfoAsync_New();
+                    //重载数据
+                    var data = await scheduler.GetAllJobBriefInfoAsync_New();
                     jobItems = new List<JobBriefInfo>();
                     if (data.Count > 0)
                     {
                         jobItems = data;
                     }
 
-                ////重载页面
-                //await OnInitializedAsync();
+                    ////重载页面
+                    //await OnInitializedAsync();
 
 
-            }
+                }
             }
             await InvokeAsync(StateHasChanged);
         };
@@ -283,8 +283,41 @@
     /// <returns></returns>
     private async Task GetLog(string JOB_GROUP_NAME, string JOB_NAME)
     {
-        await _message.Warn("功能开发中", 0.5);
-        //var res = await scheduler.GetJobLogsByJobInfoAsync(JOB_GROUP_NAME, JOB_NAME);
+        var options = new DrawerOptions()
+        {
+            Title = "查看日志",
+            Width = 800,
+            BodyStyle = "paddingBottom: 80"
+        };
+
+        if (JOB_GROUP_NAME != null && JOB_NAME != null)
+        {
+            ScheduleEntity JobInfo = await scheduler.QueryJobAsync(JOB_GROUP_NAME, JOB_NAME);
+            value = JsonConvert.SerializeObject(JobInfo);
+        }
+
+        var drawerRef = await DrawerService.CreateAsync<LogList, string, string>(options, value);
+
+        drawerRef.OnOpen = () =>
+        {
+            Console.WriteLine("OnAfterOpen");
+            return Task.CompletedTask;
+        };
+
+        drawerRef.OnClosing = async handle =>
+        {
+            Console.WriteLine("OnAfterClosing:");
+            await Task.CompletedTask;
+            //if (await confirmService.Show("取消后填写的数据将销毁?", "确定取消?", ConfirmButtons.YesNo) == ConfirmResult.No)
+            //{
+            //    handle.Reject();
+            //}
+        };
+
+        drawerRef.OnClosed = async result =>
+        {
+            await InvokeAsync(StateHasChanged);
+        };
     }
 
     /// <summary>

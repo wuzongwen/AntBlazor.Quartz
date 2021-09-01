@@ -1,0 +1,73 @@
+﻿@namespace AntDesign
+@using Blazor.Quartz.Core.Service.App
+@using Blazor.Quartz.Core.Service.App.Dto
+@using Blazor.Quartz.Core.Service.App.Enum
+@inject IJobLogService joblogservice
+@inject MessageService _message
+@inherits DrawerTemplate<string, string>
+
+<Table DataSource="@logItems" Bordered=@true Loading="@isLoading" Size=@TableSize.Middle>
+    <Column @bind-Field="@context.REQUEST_URL" Title="请求地址"></Column>
+    <Column @bind-Field="@context.RESPONSE_DATA" Ellipsis></Column>
+    <Column @bind-Field="@context.EXECUTION_STATUS" Width="100">
+        @{
+            var color = "";
+            switch (context.EXECUTION_STATUS)
+            {
+                case ExecutionStatusEnum.Success:
+                    color = "green";
+                    break;
+                case ExecutionStatusEnum.Failure:
+                    color = "red";
+                    break;
+                default:
+                    color = "gray";
+                    break;
+            }
+            <Tag Color="@color">@context.EXECUTION_STATUS</Tag>
+        }
+    </Column>
+    <Column @bind-Field="@context.BEGIN_TIME" Width="160"></Column>
+</Table>
+
+@code {
+    private List<JOB_EXECUTION_LOG> logItems;
+    bool isLoading = false;
+
+    string value;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            await LoadTable();
+
+            isLoading = false;
+        }
+        catch (Exception ex)
+        {
+            await _message.Error(ex.Message);
+        }
+    }
+
+    async void OnClose()
+    {
+        await this.CloseAsync(value);
+    }
+
+    /// <summary>
+    /// 加载表格
+    /// </summary>
+    /// <returns></returns>
+    private async Task LoadTable()
+    {
+        var querylogDto = new QueryLogDto();
+        var start_time = DateTime.Now.AddYears(-10);
+        var end_time = DateTime.Now;
+        querylogDto.start_time = start_time.ToString("yyyy-MM-dd HH:mm:ss");
+        querylogDto.end_time = end_time.ToString("yyyy-MM-dd HH:mm:ss");
+        logItems = await joblogservice.GetList(querylogDto);
+    }
+}

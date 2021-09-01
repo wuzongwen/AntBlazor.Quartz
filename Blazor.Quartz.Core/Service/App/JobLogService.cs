@@ -46,7 +46,7 @@ namespace Blazor.Quartz.Core.Service.App
                             ,[HEADERS]
                             ,[REQUEST_DATA]
                             ,[RESPONSE_DATA]
-                            ,[BEGIN_TIME] FROM { QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE BEGIN_TIME >= @START_TIME AND BEGIN_TIME<= @END_TIME", new { START_TIME = query.start_time, END_TIME = query.end_time });
+                            ,[BEGIN_TIME] FROM { QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE BEGIN_TIME >= @START_TIME AND BEGIN_TIME<= @END_TIME ORDER BY BEGIN_TIME DESC", new { START_TIME = query.start_time, END_TIME = query.end_time });
             return res.ToList();
         }
     }
