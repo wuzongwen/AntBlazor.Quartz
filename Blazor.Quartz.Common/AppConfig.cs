@@ -11,5 +11,9 @@ namespace Blazor.Quartz.Common
     {
         public static string DbProviderName => ConfigurationManager.GetTryConfig("DbConfig:dbProviderName");
         public static string ConnectionString => ConfigurationManager.GetTryConfig("DbConfig:connectionString");
+
+        public static string DingTalkRobot => ConfigurationManager.GetTryConfig("DingTalkRobot");
+        public static string DingTalkWebHook => ConfigurationManager.GetTryConfig("DingTalkRobot:Webhook");
+        public static string DingTalkKeyWord => ConfigurationManager.GetTryConfig("DingTalkRobot:Keyword");
     }
 }

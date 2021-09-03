@@ -1,7 +1,9 @@
+using Blazor.Quartz.Common.PollyClient;
 using Blazor.Quartz.Core.Hubs;
 using Blazor.Quartz.Core.Service.App;
 using Blazor.Quartz.Core.Service.Timer;
 using Blazor.Quartz.Web.Extensions;
+using Flurl.Http;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
@@ -83,6 +85,9 @@ namespace Blazor.Quartz.Web
                 opt.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All);
             });
 
+            //注入Polly重试服务
+            services.AddSingleton<Policies>();
+
             //注入任务调度
             services.AddHostedService<QuartzService>();
             services.AddSingleton<SchedulerCenter>();
@@ -114,6 +119,11 @@ namespace Blazor.Quartz.Web
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
+            //配置Flurl使用Polly实现重试Policy
+            var policies = app.ApplicationServices.GetService<Policies>();
+            FlurlHttp.Configure(setting =>
+                        setting.HttpClientFactory = new PollyHttpClientFactory(policies));
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();

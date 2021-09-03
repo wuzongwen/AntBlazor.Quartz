@@ -99,20 +99,20 @@
         //StringContent queryString = new StringContent("");
         //await Http.PostAsync($"https://localhost:44376/api/Notify/NotifyLogin", queryString);
 
-        //string baseUrl = "https://localhost:44376/";
+        string baseUrl = "https://localhost:44376/";
 
-        //_hubUrl = baseUrl.TrimEnd('/') + NotifyHub.HubUrl;
+        _hubUrl = baseUrl.TrimEnd('/') + NotifyHub.HubUrl;
 
-        //_hubConnection = new HubConnectionBuilder()
-        //    .WithUrl(_hubUrl)
-        //    .Build();
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(_hubUrl)
+            .Build();
 
-        //_hubConnection.On<string, string>("Broadcast", BroadcastMessage);
+        _hubConnection.On<string, string>("Broadcast", BroadcastMessage);
         //客户端发保持连接请求到服务端最长间隔
-        //_hubConnection.KeepAliveInterval = TimeSpan.FromMinutes(4);
+        _hubConnection.KeepAliveInterval = TimeSpan.FromMinutes(4);
         //服务端发保持连接请求到客户端间隔
-        //_hubConnection.ServerTimeout = TimeSpan.FromMinutes(4);
-        //await _hubConnection.StartAsync();
+        _hubConnection.ServerTimeout = TimeSpan.FromMinutes(4);
+        await _hubConnection.StartAsync();
 
         await LoadData();
     }

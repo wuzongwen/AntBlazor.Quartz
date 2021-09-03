@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Blazor.Quartz.Core.Service.App.Enum;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -36,5 +37,30 @@ namespace Blazor.Quartz.Core.Service.Timer.Dto
         /// 异常消息
         /// </summary>
         public string ErrorMsg { get; set; }
+
+        /// <summary>
+        /// 请求地址
+        /// </summary>
+        public string Req_Url { get; set; }
+
+        /// <summary>
+        /// 请求类型
+        /// </summary>
+        public string Req_Type { get; set; }
+
+        /// <summary>
+        /// 请求头
+        /// </summary>
+        public string Headers { get; set; }
+
+        /// <summary>
+        /// 响应数据
+        /// </summary>
+        public string Res_Data { get; set; }
+
+        /// <summary>
+        /// 状态
+        /// </summary>
+        public ExecutionStatusEnum Status { get; set; }
     }
 }

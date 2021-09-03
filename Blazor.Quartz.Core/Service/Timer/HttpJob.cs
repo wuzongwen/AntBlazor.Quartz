@@ -15,11 +15,15 @@ using System.Threading.Tasks;
 using System.Web;
 using Talk.Extensions;
 using Talk.Extensions.Helper;
+using Flurl.Http;
+using Blazor.Quartz.Common.DingTalkRobot.Robot;
 
 namespace Blazor.Quartz.Core.Service.Timer
 {
     public class HttpJob : JobBase<LogUrlModel>, IJob
     {
+        private IFlurlResponse flurlResponse;
+
         public HttpJob() : base(new LogUrlModel())
         { }
 
@@ -40,41 +44,101 @@ namespace Blazor.Quartz.Core.Service.Timer
 
             HttpResponseMessage response = new HttpResponseMessage();
             var http = HttpHelper.Instance;
+            LogInfo.Req_Url = requestUrl;
+            LogInfo.Req_Type = LogInfo.RequestType;
+            LogInfo.Headers = headersString;
+            LogInfo.Result = requestParameters;
             switch (requestType)
             {
                 case RequestTypeEnum.Get:
-                    response = await http.GetAsync(requestUrl, headers);
+                    //response = await http.GetAsync(requestUrl, headers);
+                    if (headers != null) 
+                    {
+                        flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(30).GetAsync();
+                    }
+                    else 
+                    {
+                        flurlResponse = await requestUrl.WithTimeout(30).GetAsync();
+                    }
+                    response = flurlResponse.ResponseMessage;
                     break;
                 case RequestTypeEnum.Post:
-                    response = await http.PostAsync(requestUrl, requestParameters, headers);
+                    //response = await http.PostAsync(requestUrl, requestParameters, headers);
+                    if (headers != null)
+                    {
+                        if (requestParameters != null)
+                        {
+                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(30).PostStringAsync(requestParameters);
+                        }
+                        else
+                        {
+                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(30).PostAsync();
+                        }
+                    }
+                    else 
+                    {
+                        if (requestParameters != null)
+                        {
+                            flurlResponse = await requestUrl.WithTimeout(30).PostStringAsync(requestParameters);
+                        }
+                        else 
+                        {
+                            flurlResponse = await requestUrl.WithTimeout(30).PostStringAsync(requestParameters);
+                        }
+                    }
+                    response = flurlResponse.ResponseMessage;
                     break;
                 case RequestTypeEnum.Put:
-                    response = await http.PutAsync(requestUrl, requestParameters, headers);
+                    //response = await http.PutAsync(requestUrl, requestParameters, headers);
+                    if (headers != null)
+                    {
+                        if (requestParameters != null)
+                        {
+                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(30).PutStringAsync(requestParameters);
+                        }
+                        else 
+                        {
+                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(30).PutAsync();
+                        }
+                    }
+                    else
+                    {
+                        if (requestParameters != null)
+                        {
+                            flurlResponse = await requestUrl.WithTimeout(30).PutStringAsync(requestParameters);
+                        }
+                        else
+                        {
+                            flurlResponse = await requestUrl.WithTimeout(30).PutAsync();
+                        }
+                    }
+                    response = flurlResponse.ResponseMessage;
                     break;
                 case RequestTypeEnum.Delete:
-                    response = await http.DeleteAsync(requestUrl, headers);
+                    //response = await http.DeleteAsync(requestUrl, headers);
+                    if (headers != null)
+                    {
+                        flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(30).DeleteAsync();
+                    }
+                    else
+                    {
+                        flurlResponse = await requestUrl.WithTimeout(30).DeleteAsync();
+                    }
+                    response = flurlResponse.ResponseMessage;
                     break;
             }
             var result = HttpUtility.HtmlEncode(await response.Content.ReadAsStringAsync());
             LogInfo.Result = $"<span class='result'>{result.MaxLeft(1000)}</span>";
 
-            //添加执行记录
-            var model = new JOB_EXECUTION_LOG();
-            model.JOB_NAME = context.JobDetail.Key.Name;
-            model.JOB_GROUP = context.JobDetail.Key.Group;
-            model.REQUEST_URL = LogInfo.Url;
-            model.REQUEST_TYPE = LogInfo.RequestType;
-            model.HEADERS = headersString;
-            model.REQUEST_DATA = requestParameters;
-            model.RESPONSE_DATA = HttpUtility.HtmlDecode(result);
-            model.BEGIN_TIME = LogInfo.BeginTime;
+            LogInfo.Res_Data = HttpUtility.HtmlDecode(result);
 
             if (!response.IsSuccessStatusCode)
             {
-                model.EXECUTION_STATUS = ExecutionStatusEnum.Failure;
+                LogInfo.Status = ExecutionStatusEnum.Failure;
                 LogInfo.ErrorMsg = $"<span class='error'>{result.MaxLeft(3000)}</span>";
                 await ErrorAsync(LogInfo.JobName, new Exception(result.MaxLeft(3000)), JsonConvert.SerializeObject(LogInfo), MailLevel);
                 context.JobDetail.JobDataMap[QuartzConstant.EXCEPTION] = $"<div class='err-time'>{LogInfo.BeginTime}</div>{JsonConvert.SerializeObject(LogInfo)}";
+                DingTalkRobot.SendTextMessage($"任务执行失败,错误信息:{LogInfo.ErrorMsg}", null, false);
             }
             else
             {
@@ -84,32 +148,23 @@ namespace Blazor.Quartz.Core.Service.Timer
                     var httpResult = JsonConvert.DeserializeObject<HttpResultModel>(HttpUtility.HtmlDecode(result));
                     if (!httpResult.IsSuccess)
                     {
-                        model.EXECUTION_STATUS = ExecutionStatusEnum.Failure;
+                        LogInfo.Status = ExecutionStatusEnum.Failure;
                         LogInfo.ErrorMsg = $"<span class='error'>{httpResult.ErrorMsg}</span>";
                         await ErrorAsync(LogInfo.JobName, new Exception(httpResult.ErrorMsg), JsonConvert.SerializeObject(LogInfo), MailLevel);
                         context.JobDetail.JobDataMap[QuartzConstant.EXCEPTION] = $"<div class='err-time'>{LogInfo.BeginTime}</div>{JsonConvert.SerializeObject(LogInfo)}";
+                        DingTalkRobot.SendTextMessage($"任务执行失败,错误信息:{httpResult.ErrorMsg}", null, false);
                     }
                     else
-                        model.EXECUTION_STATUS = ExecutionStatusEnum.Success;
+                        LogInfo.Status = ExecutionStatusEnum.Success;
                     await InformationAsync(LogInfo.JobName, JsonConvert.SerializeObject(LogInfo), MailLevel);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    model.EXECUTION_STATUS = ExecutionStatusEnum.Failure;
+                    LogInfo.Status = ExecutionStatusEnum.Failure;
                     await InformationAsync(LogInfo.JobName, JsonConvert.SerializeObject(LogInfo), MailLevel);
+                    DingTalkRobot.SendTextMessage($"任务执行失败,错误信息:{ex.Message}", null, false);
                 }
             }
-            //插入日志记录
-            var res = await DbContext.ExecuteAsync($@"INSERT INTO {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG ([JOB_NAME]
-                            ,[JOB_GROUP]
-                            ,[EXECUTION_STATUS]
-                            ,[REQUEST_URL]
-                            ,[REQUEST_TYPE]
-                            ,[HEADERS]
-                            ,[REQUEST_DATA]
-                            ,[RESPONSE_DATA]
-                            ,[BEGIN_TIME]
-                            ) VALUES(@JOB_NAME,@JOB_GROUP,@EXECUTION_STATUS,@REQUEST_URL,@REQUEST_TYPE,@HEADERS,@REQUEST_DATA,@RESPONSE_DATA,@BEGIN_TIME)", model);
         }
     }
 }
