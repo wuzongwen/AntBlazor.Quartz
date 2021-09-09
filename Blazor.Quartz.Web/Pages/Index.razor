@@ -36,6 +36,13 @@
             </Body>
         </Card>
         </Col>
+        <Col Span="6">
+        <Card Title="12小时任务执行次数" Style="max-width:300px;">
+            <Body>
+                @hour24count
+            </Body>
+        </Card>
+        </Col>
     </Row>
     <Divider Orientation="left" Plain>作业执行统计</Divider>
     <Row>
@@ -51,6 +58,7 @@
     private bool isshow = false;
     int app_count = 0;
     int job_count = 0;
+    int hour24count = 0;
 
     List<object> data = new List<object>();
 
@@ -65,7 +73,7 @@
         Description = new Description()
         {
             Visible = true,
-            Text = "显示最近12小时内的任务执行数量",
+            Text = "显示最近12小时内的任务执行情况",
         },
         Padding = "auto",
         ForceFit = true,
@@ -232,6 +240,7 @@
         querylogDto.start_time = start_time.ToString("yyyy-MM-dd HH:mm:ss");
         querylogDto.end_time = end_time.ToString("yyyy-MM-dd HH:mm:ss");
         var job_logs = await joblogservice.GetList(querylogDto);
+        hour24count = job_logs.Count();
         for (DateTime i = start_time; i < end_time; i = i.AddHours(1))
         {
             var count = job_logs.Where(o => Convert.ToDateTime(o.BEGIN_TIME).ToString("yyyy-MM-dd HH") == i.ToString("yyyy-MM-dd HH")).Count();
