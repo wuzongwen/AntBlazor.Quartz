@@ -190,13 +190,6 @@ namespace Blazor.Quartz.Core.Service.Timer
                     httpDir.Add(QuartzConstant.REQUESTPARAMETERS, entity.RequestParameters);
                     httpDir.Add(QuartzConstant.REQUESTTYPE, ((int)entity.RequestType).ToString());
                 }
-                else if (entity.JobType == JobTypeEnum.Emial)
-                {
-                    jobConfigurator = JobBuilder.Create<MailJob>();
-                    httpDir.Add(QuartzConstant.MailTitle, entity.MailTitle);
-                    httpDir.Add(QuartzConstant.MailContent, entity.MailContent);
-                    httpDir.Add(QuartzConstant.MailTo, entity.MailTo);
-                }
 
                 // 定义这个工作，并将其绑定到我们的IJob实现类                
                 IJobDetail job = jobConfigurator
@@ -282,6 +275,13 @@ namespace Blazor.Quartz.Core.Service.Timer
             BaseResult result = new BaseResult();
             try
             {
+                if (DbContext.Exists($"SELECT COUNT(1) FROM {QuartzConstant.TablePrefix}JOB_GROUP WHERE JOB_GROUP_NAME=@JOB_GROUP_NAME AND IS_ENABLE=0", new { JOB_GROUP_NAME = jobGroup })) 
+                {
+                    result.Code = 500;
+                    result.Msg = "恢复任务计划失败,原因:所属应用已停用";
+                    return result;
+                }
+
                 //检查任务是否存在
                 var jobKey = new JobKey(jobName, jobGroup);
                 if (await scheduler.CheckExists(jobKey))
@@ -291,7 +291,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                     if (!string.IsNullOrWhiteSpace(endTime) && DateTime.Parse(endTime) <= DateTime.Now)
                     {
                         result.Code = 500;
-                        result.Msg = "Job的结束时间已过期。";
+                        result.Msg = "恢复任务计划失败,原因:Job的结束时间已过期";
                     }
                     else
                     {

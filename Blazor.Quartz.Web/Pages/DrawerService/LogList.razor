@@ -7,29 +7,33 @@
 @inherits DrawerTemplate<string, string>
 
 <Table DataSource="@logItems" Bordered=@true Loading="@isLoading" Size=@TableSize.Middle>
-    <Column @bind-Field="@context.REQUEST_URL" Title="请求地址"></Column>
-    <Column @bind-Field="@context.RESPONSE_DATA" Ellipsis></Column>
-    <Column @bind-Field="@context.EXECUTION_STATUS" Width="100">
-        @{
-            var color = "";
-            switch (context.EXECUTION_STATUS)
-            {
-                case ExecutionStatusEnum.Success:
-                    color = "green";
-                    break;
-                case ExecutionStatusEnum.Failure:
-                    color = "red";
-                    break;
-                default:
-                    color = "gray";
-                    break;
+    <RowTemplate>
+        <Column @bind-Field="@context.REQUEST_URL" Title="请求地址" Ellipsis ></Column>
+        <Column @bind-Field="@context.RESPONSE_DATA" Ellipsis ></Column>
+        <Column @bind-Field="@context.EXECUTION_STATUS" Width="100">
+            @{
+                var color = "";
+                switch (context.EXECUTION_STATUS)
+                {
+                    case ExecutionStatusEnum.Success:
+                        color = "green";
+                        break;
+                    case ExecutionStatusEnum.Failure:
+                        color = "red";
+                        break;
+                    default:
+                        color = "gray";
+                        break;
+                }
+                <Tag Color="@color">@context.EXECUTION_STATUS</Tag>
             }
-            <Tag Color="@color">@context.EXECUTION_STATUS</Tag>
-        }
-    </Column>
-    <Column @bind-Field="@context.BEGIN_TIME" Width="160"></Column>
+        </Column>
+        <Column @bind-Field="@context.BEGIN_TIME" Width="160"></Column>
+    </RowTemplate>
+    <ExpandTemplate>
+        @context.Data.RESPONSE_DATA
+    </ExpandTemplate>
 </Table>
-
 @code {
     private List<JOB_EXECUTION_LOG> logItems;
     bool isLoading = false;

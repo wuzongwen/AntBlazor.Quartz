@@ -83,7 +83,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                         }
                         else 
                         {
-                            flurlResponse = await requestUrl.WithTimeout(30).PostStringAsync(requestParameters);
+                            flurlResponse = await requestUrl.WithTimeout(30).PostAsync();
                         }
                     }
                     response = flurlResponse.ResponseMessage;
@@ -136,33 +136,31 @@ namespace Blazor.Quartz.Core.Service.Timer
             {
                 LogInfo.Status = ExecutionStatusEnum.Failure;
                 LogInfo.ErrorMsg = $"<span class='error'>{result.MaxLeft(3000)}</span>";
-                await ErrorAsync(LogInfo.JobName, new Exception(result.MaxLeft(3000)), JsonConvert.SerializeObject(LogInfo), MailLevel);
+                await ErrorAsync(LogInfo.JobName, new Exception(result.MaxLeft(3000)), JsonConvert.SerializeObject(LogInfo));
                 context.JobDetail.JobDataMap[QuartzConstant.EXCEPTION] = $"<div class='err-time'>{LogInfo.BeginTime}</div>{JsonConvert.SerializeObject(LogInfo)}";
-                DingTalkRobot.SendTextMessage($"任务执行失败,错误信息:{LogInfo.ErrorMsg}", null, false);
             }
             else
             {
                 try
                 {
-                    //这里需要和请求方约定好返回结果约定为HttpResultModel模型
-                    var httpResult = JsonConvert.DeserializeObject<HttpResultModel>(HttpUtility.HtmlDecode(result));
-                    if (!httpResult.IsSuccess)
-                    {
-                        LogInfo.Status = ExecutionStatusEnum.Failure;
-                        LogInfo.ErrorMsg = $"<span class='error'>{httpResult.ErrorMsg}</span>";
-                        await ErrorAsync(LogInfo.JobName, new Exception(httpResult.ErrorMsg), JsonConvert.SerializeObject(LogInfo), MailLevel);
-                        context.JobDetail.JobDataMap[QuartzConstant.EXCEPTION] = $"<div class='err-time'>{LogInfo.BeginTime}</div>{JsonConvert.SerializeObject(LogInfo)}";
-                        DingTalkRobot.SendTextMessage($"任务执行失败,错误信息:{httpResult.ErrorMsg}", null, false);
-                    }
-                    else
-                        LogInfo.Status = ExecutionStatusEnum.Success;
-                    await InformationAsync(LogInfo.JobName, JsonConvert.SerializeObject(LogInfo), MailLevel);
+                    ////这里需要和请求方约定好返回结果约定为HttpResultModel模型
+                    //var httpResult = JsonConvert.DeserializeObject<HttpResultModel>(HttpUtility.HtmlDecode(result));
+                    //if (!httpResult.IsSuccess)
+                    //{
+                    //    LogInfo.Status = ExecutionStatusEnum.Failure;
+                    //    LogInfo.ErrorMsg = $"<span class='error'>{httpResult.ErrorMsg}</span>";
+                    //    await ErrorAsync(LogInfo.JobName, new Exception(httpResult.ErrorMsg), JsonConvert.SerializeObject(LogInfo));
+                    //    context.JobDetail.JobDataMap[QuartzConstant.EXCEPTION] = $"<div class='err-time'>{LogInfo.BeginTime}</div>{JsonConvert.SerializeObject(LogInfo)}";
+                    //}
+                    //else
+                    //    LogInfo.Status = ExecutionStatusEnum.Success;
+                    LogInfo.Status = ExecutionStatusEnum.Success;
                 }
                 catch (Exception ex)
                 {
                     LogInfo.Status = ExecutionStatusEnum.Failure;
-                    await InformationAsync(LogInfo.JobName, JsonConvert.SerializeObject(LogInfo), MailLevel);
-                    DingTalkRobot.SendTextMessage($"任务执行失败,错误信息:{ex.Message}", null, false);
+                    await ErrorAsync(LogInfo.JobName, ex, JsonConvert.SerializeObject(LogInfo));
+                    throw new Exception(ex.Message);
                 }
             }
         }

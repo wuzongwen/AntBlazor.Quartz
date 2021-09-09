@@ -17,8 +17,8 @@ namespace Blazor.Quartz.Common.DingTalkRobot.Robot
     {
         private static string Webhook = AppConfig.DingTalkWebHook;
         private static string Keyword = AppConfig.DingTalkKeyWord;
-        private List<string> AtMobiles = null;
-        private bool AtAll = false;
+        private static List<string> AtMobiles = null;
+        private static bool AtAll = false;
 
         /// <summary>
         ///  调用自定义机器人发Text类型消息
@@ -28,7 +28,7 @@ namespace Blazor.Quartz.Common.DingTalkRobot.Robot
         /// <param name="atMobiles">被@人的手机号</param>
         /// <param name="isAtAll">@所有人时:true,否则为:false</param>
         /// <returns></returns>
-        public static void SendTextMessage(string content, List<string> atMobiles, bool isAtAll)
+        public static async Task SendTextMessage(string content, List<string> atMobiles, bool isAtAll)
         {
             try
             {
@@ -52,7 +52,7 @@ namespace Blazor.Quartz.Common.DingTalkRobot.Robot
                         isAtAll = isAtAll
                     }
                 };
-                SendMessage(Webhook, message);
+               await SendMessage(Webhook, message);
 
             }
             catch (Exception ex)
@@ -70,7 +70,7 @@ namespace Blazor.Quartz.Common.DingTalkRobot.Robot
         /// <param name="picUrl">图片url</param>
         /// <param name="messageUrl">点击消息跳转的url</param>
         /// <returns></returns>
-        public void SendLinkMessage(string webhook, string title, string text, string picUrl, string messageUrl)
+        public async Task SendLinkMessage(string webhook, string title, string text, string picUrl, string messageUrl)
         {
             try
             {
@@ -85,7 +85,7 @@ namespace Blazor.Quartz.Common.DingTalkRobot.Robot
                         messageUrl = messageUrl
                     },
                 };
-                SendMessage(webhook, message);
+               await SendMessage(webhook, message);
             }
             catch (Exception ex)
             {
@@ -102,7 +102,7 @@ namespace Blazor.Quartz.Common.DingTalkRobot.Robot
         /// <param name="atMobiles">被@手机号</param>
         /// <param name="isAtAll">@所有人时:true,否则为:false</param>
         /// <returns></returns>
-        public void SendMarkdownMessage(string title, TitleType titleType, List<MarkdownMessage> markdownMessages, List<string> atMobiles, bool isAtAll)
+        public static async Task SendMarkdownMessage(string title, TitleType titleType, List<MarkdownMessage> markdownMessages, List<string> atMobiles, bool isAtAll)
         {
             try
             {
@@ -110,7 +110,7 @@ namespace Blazor.Quartz.Common.DingTalkRobot.Robot
                 var mobiles = "";
                 if (!isAtAll)
                 {
-                    mobiles = GetAtMobiles(atMobiles.IsEmpty() ? this.AtMobiles : atMobiles);
+                    mobiles = GetAtMobiles(atMobiles.IsEmpty() ? AtMobiles : atMobiles);
                 }
                 //消息内容头部(标题+被@的人;注：自动换行)
                 var textTop = GetContentGrade(titleType, string.Format("【{0}】{1}", Keyword, title)) + "\n >";
@@ -126,16 +126,44 @@ namespace Blazor.Quartz.Common.DingTalkRobot.Robot
                     },
                     at = new
                     {
-                        atMobiles = atMobiles.IsEmpty() ? this.AtMobiles : atMobiles,
+                        atMobiles = atMobiles.IsEmpty() ? AtMobiles : atMobiles,
                         isAtAll = isAtAll,
                     }
                 };
-                SendMessage(Webhook, message);
+                await SendMessage(Webhook, message);
             }
             catch (Exception ex)
             {
                 Log.Error("调用自定义机器人发Markdown类型消息失败，" + ex.Message);
             }
+        }
+
+        /// <summary>
+        /// 根据实体发Markdown类型消息
+        /// <param name="atMobiles">被@手机号</param>
+        /// <param name="isAtAll">@所有人时:true,否则为:false</param>
+        /// </summary>
+        /// <param name="model"></param>
+        public static async Task SendMarkdownMessageByModel(MDMessageModel model, List<string> atMobiles, bool isAtAll)
+        {
+            List<MarkdownMessage> markdownMessages = new List<MarkdownMessage>();
+            int i = 0;
+            foreach (var item in model.Text)
+            {
+                i++;
+                MarkdownMessage md = new MarkdownMessage();
+                md.Index = i;
+                md.MarkdownType = MarkdownType.文本;
+                md.Text = new Text
+                {
+                    ContentType = ContentType.加粗,
+                    Content = item
+                };
+                md.IsLineFeed = true;
+                markdownMessages.Add(md);
+            }
+
+           await SendMarkdownMessage(model.Title, TitleType.一级, markdownMessages, atMobiles, isAtAll);
         }
 
         /// <summary>
@@ -149,7 +177,7 @@ namespace Blazor.Quartz.Common.DingTalkRobot.Robot
         /// <param name="singleTitle">单个按钮的方案。(设置此项和singleUrl后btns无效。)</param>
         /// <param name="singleUrl">点击singleTitle按钮触发的URL</param>
         /// <returns></returns>
-        public void SendActionCardMessage(string webhook, string title, List<MarkdownMessage> markdownMessages, int hideAvatar, int btnOrientation, string singleTitle, string singleUrl)
+        public async Task SendActionCardMessage(string webhook, string title, List<MarkdownMessage> markdownMessages, int hideAvatar, int btnOrientation, string singleTitle, string singleUrl)
         {
             try
             {
@@ -166,7 +194,7 @@ namespace Blazor.Quartz.Common.DingTalkRobot.Robot
                         singleURL = singleUrl
                     },
                 };
-                SendMessage(webhook, message);
+                await SendMessage(webhook, message);
             }
             catch (Exception ex)
             {
@@ -184,7 +212,7 @@ namespace Blazor.Quartz.Common.DingTalkRobot.Robot
         /// <param name="btnOrientation">0-按钮竖直排列，1-按钮横向排列</param>
         /// <param name="btns">按钮集合</param>
         /// <returns></returns>
-        public void SendSingleActionCardMessage(string webhook, string title, List<MarkdownMessage> markdownMessages, int hideAvatar, int btnOrientation, List<Btn> btns)
+        public async Task SendSingleActionCardMessage(string webhook, string title, List<MarkdownMessage> markdownMessages, int hideAvatar, int btnOrientation, List<Btn> btns)
         {
             try
             {
@@ -209,7 +237,7 @@ namespace Blazor.Quartz.Common.DingTalkRobot.Robot
                     },
                     msgtype = "actionCard",
                 };
-                SendMessage(webhook, message);
+                await SendMessage(webhook, message);
             }
             catch (Exception ex)
             {
@@ -223,7 +251,7 @@ namespace Blazor.Quartz.Common.DingTalkRobot.Robot
         /// <param name="webhook">webHook地址</param>
         /// <param name="links">图片按钮集合</param>
         /// <returns></returns>
-        public void SendFeedCardMessage(string webhook, List<Link> links)
+        public async Task SendFeedCardMessage(string webhook, List<Link> links)
         {
             try
             {
@@ -244,7 +272,7 @@ namespace Blazor.Quartz.Common.DingTalkRobot.Robot
                     },
                     msgtype = "feedCard"
                 };
-                SendMessage(webhook, message);
+                await SendMessage(webhook, message);
             }
             catch (Exception ex)
             {
@@ -259,17 +287,14 @@ namespace Blazor.Quartz.Common.DingTalkRobot.Robot
         /// <param name="message">消息信息</param>
         /// <returns></returns>
 
-        private static void SendMessage(string webhook, object message)
+        private static async Task SendMessage(string webhook, object message)
         {
             try
             {
-                Task.Run(async () =>
-                {
-                    await webhook
+                await webhook
                          .WithHeader("Content-Type", "application/json")
                          .WithTimeout(20)
                          .PostJsonAsync(message);
-                });
             }
             catch (Exception ex)
             {
@@ -282,7 +307,7 @@ namespace Blazor.Quartz.Common.DingTalkRobot.Robot
         /// </summary>
         /// <param name="markdownMessages">消息内容</param>
         /// <returns></returns>
-        private string RestructureMessage(List<MarkdownMessage> markdownMessages)
+        private static string RestructureMessage(List<MarkdownMessage> markdownMessages)
         {
             var text = "";
             foreach (var item in markdownMessages.OrderBy(x => x.Index))
@@ -347,7 +372,7 @@ namespace Blazor.Quartz.Common.DingTalkRobot.Robot
         /// <param name="titleType">文本类型</param>
         /// <param name="title">文本</param>
         /// <returns></returns>
-        private string GetContentGrade(TitleType titleType, string title)
+        private static string GetContentGrade(TitleType titleType, string title)
         {
             switch (titleType)
             {

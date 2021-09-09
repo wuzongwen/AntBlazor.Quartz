@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blazor.Quartz.Core", "Blazo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blazor.Quartz.Common", "Blazor.Quartz.Common\Blazor.Quartz.Common.csproj", "{60D48150-F066-49CC-A587-8795F64DDE5B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Blazor.Quartz.Service", "Blazor.Quartz.Service\Blazor.Quartz.Service.csproj", "{350B0A8D-4A3B-4267-8043-EBA533C6C1B3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{60D48150-F066-49CC-A587-8795F64DDE5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{60D48150-F066-49CC-A587-8795F64DDE5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{60D48150-F066-49CC-A587-8795F64DDE5B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{350B0A8D-4A3B-4267-8043-EBA533C6C1B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{350B0A8D-4A3B-4267-8043-EBA533C6C1B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{350B0A8D-4A3B-4267-8043-EBA533C6C1B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{350B0A8D-4A3B-4267-8043-EBA533C6C1B3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

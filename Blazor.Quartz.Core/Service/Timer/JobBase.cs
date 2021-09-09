@@ -1,4 +1,4 @@
-﻿using Blazor.Quartz.Common.Mail;
+﻿using Blazor.Quartz.Common.DingTalkRobot.Robot;
 using Blazor.Quartz.Core.Const;
 using Blazor.Quartz.Core.Dapper;
 using Blazor.Quartz.Core.Service.App.Dto;
@@ -25,7 +25,6 @@ namespace Blazor.Quartz.Core.Service.Timer
         protected readonly int warnTime = 20;//接口请求超过多少秒记录警告日志 
         protected Stopwatch stopwatch = new Stopwatch();
         protected T LogInfo { get; private set; }
-        protected MailMessageEnum MailLevel = MailMessageEnum.None;
 
         public JobBase(T logInfo)
         {
@@ -42,7 +41,6 @@ namespace Blazor.Quartz.Core.Service.Timer
                 return;
             }
 
-            MailLevel = (MailMessageEnum)int.Parse(context.JobDetail.JobDataMap.GetString(QuartzConstant.MAILMESSAGE) ?? "0");
             //记录执行次数
             var runNumber = context.JobDetail.JobDataMap.GetLong(QuartzConstant.RUNNUMBER);
             context.JobDetail.JobDataMap[QuartzConstant.RUNNUMBER] = ++runNumber;
@@ -66,7 +64,7 @@ namespace Blazor.Quartz.Core.Service.Timer
             {
                 LogInfo.ErrorMsg = $"<span class='error'>{ex.Message}</span>";
                 context.JobDetail.JobDataMap[QuartzConstant.EXCEPTION] = $"<div class='err-time'>{LogInfo.BeginTime}</div>{JsonConvert.SerializeObject(LogInfo)}";
-                await ErrorAsync(LogInfo.JobName, ex, JsonConvert.SerializeObject(LogInfo), MailLevel);
+                await ErrorAsync(LogInfo.JobName, ex, JsonConvert.SerializeObject(LogInfo));
                 model.RESPONSE_DATA = ex.Message;
             }
             finally
@@ -83,9 +81,9 @@ namespace Blazor.Quartz.Core.Service.Timer
                 var classErr = string.IsNullOrWhiteSpace(LogInfo.ErrorMsg) ? "" : "error";
                 logs.Add($"<p class='msgList {classErr}'><span class='time'>{LogInfo.BeginTime} 至 {LogInfo.EndTime}  【耗时】{LogInfo.ExecuteTime}</span>{JsonConvert.SerializeObject(LogInfo)}</p>");
                 context.JobDetail.JobDataMap[QuartzConstant.LOGLIST] = logs;
-                if (seconds >= warnTime)//如果请求超过20秒，记录警告日志    
+                if (seconds >= warnTime)//如果请求超过20秒，警告  
                 {
-                    await WarningAsync(LogInfo.JobName, "耗时过长 - " + JsonConvert.SerializeObject(LogInfo), MailLevel);
+                    await WarningAsync(LogInfo.JobName, "耗时过长 - " + JsonConvert.SerializeObject(LogInfo));
                 }
 
                 //添加执行记录
@@ -107,71 +105,27 @@ namespace Blazor.Quartz.Core.Service.Timer
                             ,[RESPONSE_DATA]
                             ,[BEGIN_TIME]
                             ) VALUES(@JOB_NAME,@JOB_GROUP,@EXECUTION_STATUS,@REQUEST_URL,@REQUEST_TYPE,@HEADERS,@REQUEST_DATA,@RESPONSE_DATA,@BEGIN_TIME)", model);
-                //只保留近7天的数据
-                await DbContext.ExecuteAsync($@"DELETE FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE BEGIN_TIME<@START_TIME", new { START_TIME = DateTime.Now.AddDays(-6).Date.ToString("yyyy-MM-dd") });
             }
         }
 
         public abstract Task NextExecute(IJobExecutionContext context);
 
-        public async Task WarningAsync(string title, string msg, MailMessageEnum mailMessage)
+        public async Task WarningAsync(string title, string msg)
         {
             Log.Logger.Warning(msg);
-            if (mailMessage == MailMessageEnum.All)
-            {
-                //await new SetingController().SendMail(new SendMailModel()
-                //{
-                //    Title = $"任务调度-{title}【警告】消息",
-                //    Content = msg
-                //});
-                var model = new SendMailModel()
-                {
-                    Title = $"任务调度-{title}【警告】消息",
-                    Content = msg
-                };
-
-                await MailHelper.SendMail(model.Title, model.Content, model.MailInfo);
-            }
+            await DingTalkRobot.SendTextMessage($"【警告】消息:{msg}", null, false);
         }
 
-        public async Task InformationAsync(string title, string msg, MailMessageEnum mailMessage)
+        public async Task InformationAsync(string title, string msg)
         {
             Log.Logger.Information(msg);
-            if (mailMessage == MailMessageEnum.All)
-            {
-                //await new SetingController().SendMail(new SendMailModel()
-                //{
-                //    Title = $"任务调度-{title}消息",
-                //    Content = msg
-                //});
-                var model = new SendMailModel()
-                {
-                    Title = $"任务调度-{title}消息",
-                    Content = msg
-                };
-
-                await MailHelper.SendMail(model.Title, model.Content, model.MailInfo);
-            }
+            await DingTalkRobot.SendTextMessage($"消息:{msg}", null, false);
         }
 
-        public async Task ErrorAsync(string title, Exception ex, string msg, MailMessageEnum mailMessage)
+        public async Task ErrorAsync(string title, Exception ex, string msg)
         {
             Log.Logger.Error(ex, msg);
-            if (mailMessage == MailMessageEnum.Err || mailMessage == MailMessageEnum.All)
-            {
-                //await new SetingController().SendMail(new SendMailModel()
-                //{
-                //    Title = $"任务调度-{title}【异常】消息",
-                //    Content = msg
-                //});
-                var model = new SendMailModel()
-                {
-                    Title = $"任务调度-{title}【异常】消息",
-                    Content = msg
-                };
-
-                await MailHelper.SendMail(model.Title, model.Content, model.MailInfo);
-            }
+            await DingTalkRobot.SendTextMessage($"【异常】消息:{msg}", null, false);
         }
     }
 }

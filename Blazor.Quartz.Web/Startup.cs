@@ -7,7 +7,9 @@ using Flurl.Http;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,6 +40,9 @@ namespace Blazor.Quartz.Web
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            //心跳检查
+            services.AddHealthChecks();
+
             // 日志配置
             LogConfig();
 
@@ -120,6 +125,16 @@ namespace Blazor.Quartz.Web
                 app.UseHsts();
             }
 
+            //心跳检查
+            app.UseHealthChecks("/healthCheck",
+            new HealthCheckOptions
+            {
+                ResponseWriter = async (context, report) =>
+                {
+                                await context.Response.WriteAsync("OK");
+                }
+            });
+
             //配置Flurl使用Polly实现重试Policy
             var policies = app.ApplicationServices.GetService<Policies>();
             FlurlHttp.Configure(setting =>
@@ -167,31 +182,31 @@ namespace Blazor.Quartz.Web
                                  .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => p.Level == LogEventLevel.Debug).WriteTo.Async(
                                      a =>
                                      {
-                                         a.File("File/logs/log-Debug-.txt", fileSizeLimitBytes: fileSize, retainedFileCountLimit: fileCount, rollingInterval: RollingInterval.Day);
+                                         a.File("logs/log-Debug-.txt", fileSizeLimitBytes: fileSize, retainedFileCountLimit: fileCount, rollingInterval: RollingInterval.Day);
                                      }
                                  ))
                                  .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => p.Level == LogEventLevel.Information).WriteTo.Async(
                                      a =>
                                      {
-                                         a.File("File/logs/log-Information-.txt", fileSizeLimitBytes: fileSize, retainedFileCountLimit: fileCount, rollingInterval: RollingInterval.Day);
+                                         a.File("logs/log-Info-.txt", fileSizeLimitBytes: fileSize, retainedFileCountLimit: fileCount, rollingInterval: RollingInterval.Day);
                                      }
                                  ))
                                  .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => p.Level == LogEventLevel.Warning).WriteTo.Async(
                                      a =>
                                      {
-                                         a.File("File/logs/log-Warning-.txt", fileSizeLimitBytes: fileSize, retainedFileCountLimit: fileCount, rollingInterval: RollingInterval.Day);
+                                         a.File("logs/log-Warning-.txt", fileSizeLimitBytes: fileSize, retainedFileCountLimit: fileCount, rollingInterval: RollingInterval.Day);
                                      }
                                  ))
                                  .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => p.Level == LogEventLevel.Error).WriteTo.Async(
                                      a =>
                                      {
-                                         a.File("File/logs/log-Error-.txt", fileSizeLimitBytes: fileSize, retainedFileCountLimit: fileCount, rollingInterval: RollingInterval.Day);
+                                         a.File("logs/log-Error-.txt", fileSizeLimitBytes: fileSize, retainedFileCountLimit: fileCount, rollingInterval: RollingInterval.Day);
                                      }
                                  ))
                                  .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => p.Level == LogEventLevel.Fatal).WriteTo.Async(
                                      a =>
                                      {
-                                         a.File("File/logs/log-Fatal-.txt", fileSizeLimitBytes: fileSize, retainedFileCountLimit: fileCount, rollingInterval: RollingInterval.Day);
+                                         a.File("logs/log-Fatal-.txt", fileSizeLimitBytes: fileSize, retainedFileCountLimit: fileCount, rollingInterval: RollingInterval.Day);
 
                                      }
                                  ))
@@ -199,7 +214,7 @@ namespace Blazor.Quartz.Web
                                  .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => true)).WriteTo.Async(
                                      a =>
                                      {
-                                         a.File("File/logs/log-All-.txt", fileSizeLimitBytes: fileSize, retainedFileCountLimit: fileCount, rollingInterval: RollingInterval.Day);
+                                         a.File("logs/log-All-.txt", fileSizeLimitBytes: fileSize, retainedFileCountLimit: fileCount, rollingInterval: RollingInterval.Day);
                                      }
                                  )
                                 .CreateLogger();
