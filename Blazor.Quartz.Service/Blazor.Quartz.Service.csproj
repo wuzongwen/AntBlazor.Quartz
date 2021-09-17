@@ -29,4 +29,13 @@
     <ProjectReference Include="..\Blazor.Quartz.Core\Blazor.Quartz.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="install.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="uninstall.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

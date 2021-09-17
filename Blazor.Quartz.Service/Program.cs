@@ -1,4 +1,5 @@
-﻿using Serilog;
+﻿using Blazor.Quartz.Common;
+using Serilog;
 using Serilog.Events;
 using System;
 using Topshelf;
@@ -51,12 +52,11 @@ namespace Blazor.Quartz.Service
                                  .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => true)).WriteTo.Async(
                                      a =>
                                      {
-                                         a.File("File/logs/log-All-.txt", fileSizeLimitBytes: fileSize, retainedFileCountLimit: fileCount, rollingInterval: RollingInterval.Day);
+                                         a.File("logs/log-All-.txt", fileSizeLimitBytes: fileSize, retainedFileCountLimit: fileCount, rollingInterval: RollingInterval.Day);
                                      }
                                  )
                                 .CreateLogger();
 
-            string serviceName = "任务调度心跳检查服务";
             HostFactory.Run(config =>
             {
                 config.Service<StartService>(s =>
@@ -67,9 +67,9 @@ namespace Blazor.Quartz.Service
                 });
 
                 config.RunAsLocalSystem();
-                config.SetDescription(serviceName);
-                config.SetServiceName(serviceName);
-                config.SetDisplayName(serviceName);
+                config.SetDescription(AppConfig.Description);
+                config.SetServiceName(AppConfig.ServiceName);
+                config.SetDisplayName(AppConfig.DisplayName);
             });
         }
     }
