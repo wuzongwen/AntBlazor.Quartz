@@ -4,6 +4,7 @@ using Blazor.Quartz.Core.Dapper;
 using Blazor.Quartz.Core.Entity;
 using Blazor.Quartz.Core.Repositories;
 using Blazor.Quartz.Core.Service.App.Dto;
+using Blazor.Quartz.Core.Service.App.Enum;
 using Blazor.Quartz.Core.Service.Base.Dto;
 using Blazor.Quartz.Core.Service.Timer.Dto;
 using Blazor.Quartz.Core.Service.Timer.Enum;
@@ -581,11 +582,31 @@ namespace Blazor.Quartz.Core.Service.Timer
             }
             var JOB_GROUP = jobList.Select(o => o.GroupName).ToArray();
 
-            var alllog = await DbContext.QueryAsync<JOB_EXECUTION_LOG>($"SELECT JOB_NAME,JOB_GROUP,EXECUTION_STATUS FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE JOB_GROUP IN (@JOB_GROUP) AND JOB_NAME IN (@JOB_NAME)", new { JOB_GROUP = jobList.Select(o => o.GroupName).ToList(), JOB_NAME = jobList.Select(o => o.Name).ToList() });
+            var sql = $"SELECT JOB_NAME,JOB_GROUP,EXECUTION_STATUS FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE 1=1";
+            var JOB_NAME_STR = "";
+            jobList.Select(o => o.Name).ToList().ForEach(o =>
+            {
+                JOB_NAME_STR = JOB_NAME_STR + $"'{o}',";
+            });
+            if (JOB_NAME_STR != "") 
+            {
+                JOB_NAME_STR = JOB_NAME_STR.Substring(0, JOB_NAME_STR.Length - 1);
+            }
+
+            var JOB_GROUP_STR = "";
+            jobList.Select(o => o.GroupName).ToList().ForEach(o =>
+            {
+                JOB_GROUP_STR = JOB_GROUP_STR + $"'{o}',";
+            });
+            if (JOB_GROUP_STR != "")
+            {
+                JOB_GROUP_STR = JOB_GROUP_STR.Substring(0, JOB_GROUP_STR.Length - 1);
+            }
+            var alllog = await DbContext.QueryAsync<JOB_EXECUTION_LOG>(sql, new { JOB_GROUP = JOB_GROUP_STR, JOB_NAME = JOB_NAME_STR });
             jobList.ForEach(o =>
             {
                 o.RunNumber = alllog.Count(p => p.JOB_GROUP == o.GroupName && p.JOB_NAME == o.Name);
-                o.ErrorNumber = alllog.Count(p => p.JOB_GROUP == o.GroupName && p.JOB_NAME == o.Name && p.EXECUTION_STATUS == 0);
+                o.ErrorNumber = alllog.Count(p => p.JOB_GROUP == o.GroupName && p.JOB_NAME == o.Name && p.EXECUTION_STATUS == ExecutionStatusEnum.Failure);
             });
             return jobList;
         }
