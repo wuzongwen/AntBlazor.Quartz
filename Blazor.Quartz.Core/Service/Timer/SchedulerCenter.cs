@@ -579,11 +579,13 @@ namespace Blazor.Quartz.Core.Service.Timer
                     }
                 }
             }
+            var JOB_GROUP = jobList.Select(o => o.GroupName).ToArray();
 
-            var errlog = await DbContext.QueryAsync<JOB_EXECUTION_LOG>($"SELECT JOB_NAME,JOB_GROUP FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE JOB_GROUP IN (@JOB_GROUP) AND JOB_NAME IN (@JOB_NAME) AND EXECUTION_STATUS=@EXECUTION_STATUS", new { JOB_GROUP = jobList.Select(o => o.GroupName).ToArray(), JOB_NAME = jobList.Select(o => o.Name).ToArray(), EXECUTION_STATUS = 0 });
+            var alllog = await DbContext.QueryAsync<JOB_EXECUTION_LOG>($"SELECT JOB_NAME,JOB_GROUP,EXECUTION_STATUS FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE JOB_GROUP IN (@JOB_GROUP) AND JOB_NAME IN (@JOB_NAME)", new { JOB_GROUP = jobList.Select(o => o.GroupName).ToList(), JOB_NAME = jobList.Select(o => o.Name).ToList() });
             jobList.ForEach(o =>
             {
-                o.ErrorNumber= errlog.Count(p => p.JOB_GROUP == o.GroupName && p.JOB_NAME == o.Name);
+                o.RunNumber = alllog.Count(p => p.JOB_GROUP == o.GroupName && p.JOB_NAME == o.Name);
+                o.ErrorNumber = alllog.Count(p => p.JOB_GROUP == o.GroupName && p.JOB_NAME == o.Name && p.EXECUTION_STATUS == 0);
             });
             return jobList;
         }

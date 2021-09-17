@@ -2,14 +2,15 @@
 @using Blazor.Quartz.Core.Service.App
 @using Blazor.Quartz.Core.Service.App.Dto
 @using Blazor.Quartz.Core.Service.App.Enum
+@using Blazor.Quartz.Core.Service.Timer.Dto
 @inject IJobLogService joblogservice
 @inject MessageService _message
 @inherits DrawerTemplate<string, string>
 
 <Table DataSource="@logItems" Bordered=@true Loading="@isLoading" Size=@TableSize.Middle>
     <RowTemplate>
-        <Column @bind-Field="@context.REQUEST_URL" Title="请求地址" Ellipsis ></Column>
-        <Column @bind-Field="@context.RESPONSE_DATA" Ellipsis ></Column>
+        <Column @bind-Field="@context.REQUEST_URL" Title="请求地址" Ellipsis></Column>
+        <Column @bind-Field="@context.RESPONSE_DATA" Ellipsis></Column>
         <Column @bind-Field="@context.EXECUTION_STATUS" Width="100">
             @{
                 var color = "";
@@ -67,9 +68,12 @@
     /// <returns></returns>
     private async Task LoadTable()
     {
+        var jobInfo = JsonConvert.DeserializeObject<ScheduleEntity>(base.Options);
         var querylogDto = new QueryLogDto();
         var start_time = DateTime.Now.AddYears(-10);
         var end_time = DateTime.Now;
+        querylogDto.group = jobInfo.JobGroup;
+        querylogDto.name = jobInfo.JobName;
         querylogDto.start_time = start_time.ToString("yyyy-MM-dd HH:mm:ss");
         querylogDto.end_time = end_time.ToString("yyyy-MM-dd HH:mm:ss");
         logItems = await joblogservice.GetList(querylogDto);

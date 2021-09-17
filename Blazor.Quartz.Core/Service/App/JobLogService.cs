@@ -1,6 +1,7 @@
 ﻿using Blazor.Quartz.Core.Const;
 using Blazor.Quartz.Core.Dapper;
 using Blazor.Quartz.Core.Service.App.Dto;
+using Dapper;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -38,7 +39,7 @@ namespace Blazor.Quartz.Core.Service.App
         /// <returns></returns>
         public async Task<List<JOB_EXECUTION_LOG>> GetList(QueryLogDto query)
         {
-            var res = await DbContext.QueryAsync<JOB_EXECUTION_LOG>($@"SELECT [JOB_NAME]
+            var sql = $@"SELECT [JOB_NAME]
                             ,[JOB_GROUP]
                             ,[EXECUTION_STATUS]
                             ,[REQUEST_URL]
@@ -46,7 +47,29 @@ namespace Blazor.Quartz.Core.Service.App
                             ,[HEADERS]
                             ,[REQUEST_DATA]
                             ,[RESPONSE_DATA]
-                            ,[BEGIN_TIME] FROM { QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE BEGIN_TIME >= @START_TIME AND BEGIN_TIME<= @END_TIME ORDER BY BEGIN_TIME DESC", new { START_TIME = query.start_time, END_TIME = query.end_time });
+                            ,[BEGIN_TIME] FROM { QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE 1=1";
+            var dynamicParams = new DynamicParameters();
+            if (!string.IsNullOrEmpty(query.start_time))
+            {
+                sql += " AND BEGIN_TIME >= @START_TIME";
+                dynamicParams.Add("START_TIME", query.start_time);
+            }
+            if (!string.IsNullOrEmpty(query.end_time))
+            {
+                sql += " AND BEGIN_TIME <= @END_TIME";
+                dynamicParams.Add("END_TIME", query.end_time);
+            }
+            if (!string.IsNullOrEmpty(query.group))
+            {
+                sql += " AND JOB_GROUP = @JOB_GROUP";
+                dynamicParams.Add("JOB_GROUP", query.group);
+            }
+            if (!string.IsNullOrEmpty(query.name))
+            {
+                sql += " AND JOB_NAME = @JOB_NAME";
+                dynamicParams.Add("JOB_NAME", query.name);
+            }
+            var res = await DbContext.QueryAsync<JOB_EXECUTION_LOG>(sql, dynamicParams);
             return res.ToList();
         }
     }
