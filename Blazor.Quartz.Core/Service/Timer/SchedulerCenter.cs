@@ -1,4 +1,5 @@
 ﻿using Blazor.Quartz.Common;
+using Blazor.Quartz.Common.DingTalkRobot.Robot;
 using Blazor.Quartz.Core.Const;
 using Blazor.Quartz.Core.Dapper;
 using Blazor.Quartz.Core.Entity;
@@ -169,7 +170,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                 else 
                 {
                     runNumber = await GetRunNumberAsync(jobKey);
-                    await StopOrDelScheduleJobAsync(entity.JobGroup, entity.JobName, true);
+                    await StopOrDelScheduleJobAsync(entity.JobGroup, entity.JobName, true, true);
                 }
                 
                 //http请求配置
@@ -213,6 +214,11 @@ namespace Blazor.Quartz.Core.Service.Timer
                 // 告诉Quartz使用我们的触发器来安排作业
                 await scheduler.ScheduleJob(job, trigger);
                 result.Code = 200;
+
+                if (actionType == 0) 
+                {
+                    await DingTalkRobot.SendTextMessage($"【通知】新增任务 {entity.JobGroup}-{entity.JobName}", null, false);
+                }
             }
             catch (Exception ex)
             {
@@ -228,8 +234,9 @@ namespace Blazor.Quartz.Core.Service.Timer
         /// <param name="jobGroup">任务分组</param>
         /// <param name="jobName">任务名称</param>
         /// <param name="isDelete">停止并删除任务</param>
+        /// <param name="isEdit">是否为编辑</param>
         /// <returns></returns>
-        public async Task<BaseResult> StopOrDelScheduleJobAsync(string jobGroup, string jobName, bool isDelete = false)
+        public async Task<BaseResult> StopOrDelScheduleJobAsync(string jobGroup, string jobName, bool isDelete = false, bool isEdit = false)
         {
             BaseResult result;
             try
@@ -237,13 +244,19 @@ namespace Blazor.Quartz.Core.Service.Timer
                 await scheduler.PauseJob(new JobKey(jobName, jobGroup));
                 if (isDelete)
                 {
-                    await DbContext.ExecuteAsync($"DELETE FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE JOB_GROUP=@JOB_GROUP AND JOB_NAME=@JOB_NAME", new { JOB_GROUP = jobGroup, JOB_NAME = jobName });
                     await scheduler.DeleteJob(new JobKey(jobName, jobGroup));
                     result = new BaseResult
                     {
                         Code = 200,
                         Msg = "删除任务计划成功！"
                     };
+
+                    //删除日志
+                    if (!isEdit)
+                    {
+                        await DbContext.ExecuteAsync($"DELETE FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE JOB_GROUP=@JOB_GROUP AND JOB_NAME=@JOB_NAME", new { JOB_GROUP = jobGroup, JOB_NAME = jobName });
+                        await DingTalkRobot.SendTextMessage($"【通知】{jobGroup}-{jobName} 已删除", null, false);
+                    }
                 }
                 else
                 {
@@ -252,6 +265,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                         Code = 200,
                         Msg = "停止任务计划成功！"
                     };
+                    await DingTalkRobot.SendTextMessage($"【通知】{jobGroup}-{jobName} 已暂停", null, false);
                 }
 
             }
@@ -300,6 +314,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                         await scheduler.ResumeJob(jobKey);
                         result.Msg = "恢复任务计划成功！";
                         Log.Information(string.Format("任务“{0}”恢复运行", jobName));
+                        await DingTalkRobot.SendTextMessage($"【通知】{jobGroup}-{jobName} 已恢复运行", null, false);
                     }
                 }
                 else

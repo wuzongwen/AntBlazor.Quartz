@@ -69,6 +69,7 @@ namespace Blazor.Quartz.Core.Service.App
                 sql += " AND JOB_NAME = @JOB_NAME";
                 dynamicParams.Add("JOB_NAME", query.name);
             }
+            sql += " ORDER BY BEGIN_TIME DESC";
             var res = await DbContext.QueryAsync<JOB_EXECUTION_LOG>(sql, dynamicParams);
             return res.ToList();
         }
