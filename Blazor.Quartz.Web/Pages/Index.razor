@@ -230,14 +230,15 @@
     /// <returns></returns>
     private async Task LoadData()
     {
+        var Now = DateTime.Now;
         var queryDto = new QueryModel();
         var applist = await appservice.GetList(queryDto);
         app_count = applist.Data.Count();
         var joblist = await scheduler.GetAllJobBriefInfoAsync_New();
         job_count = joblist.Count();
         var querylogDto = new QueryLogDto();
-        var start_time = DateTime.Now.AddHours(-11);
-        var end_time = DateTime.Now;
+        var start_time = Now.AddHours(-12).Date.AddHours(Now.AddHours(-12).Hour);
+        var end_time = Now.Date.AddHours(Now.Hour);
         querylogDto.start_time = start_time.ToString("yyyy-MM-dd HH:mm:ss");
         querylogDto.end_time = end_time.ToString("yyyy-MM-dd HH:mm:ss");
         var job_logs = await joblogservice.GetList(querylogDto);
