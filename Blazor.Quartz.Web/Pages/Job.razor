@@ -109,6 +109,11 @@
                     查看日志
                 </Button>
             </SpaceItem>
+            <SpaceItem>
+                <Button OnClick="@(()=>ExecuteNow(context.GroupName,context.Name))">
+                    立即执行
+                </Button>
+            </SpaceItem>
         </Space>
     </ActionColumn>
 </Table>
@@ -278,7 +283,7 @@
     }
 
     /// <summary>
-    /// 查询日志
+    /// 立即执行
     /// </summary>
     /// <returns></returns>
     private async Task GetLog(string JOB_GROUP_NAME, string JOB_NAME)
@@ -318,6 +323,20 @@
         {
             await InvokeAsync(StateHasChanged);
         };
+    }
+
+    private async Task ExecuteNow(string JOB_GROUP_NAME, string JOB_NAME)
+    {
+        var res = await scheduler.ExecuteNow(JOB_GROUP_NAME, JOB_NAME);
+        if (res)
+        {
+            await LoadTable();
+            await _message.Success("执行成功", 0.5);
+        }
+        else
+        {
+            await _message.Error("执行失败");
+        }
     }
 
     /// <summary>

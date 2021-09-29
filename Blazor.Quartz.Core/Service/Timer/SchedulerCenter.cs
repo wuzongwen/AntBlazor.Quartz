@@ -395,6 +395,18 @@ namespace Blazor.Quartz.Core.Service.Timer
         }
 
         /// <summary>
+        /// 立即执行
+        /// </summary>
+        /// <param name="jobKey"></param>
+        /// <returns></returns>
+        public async Task<bool> ExecuteNow(string jobGroup, string jobName)
+        {
+            var jobKey = new JobKey(jobName, jobGroup);
+            await scheduler.TriggerJob(jobKey);
+            return true;
+        }
+
+        /// <summary>
         /// 获取job日志
         /// </summary>
         /// <param name="jobKey"></param>
