@@ -1,4 +1,5 @@
-﻿using Blazor.Quartz.Common.DingTalkRobot.Robot;
+﻿using Blazor.Quartz.Common;
+using Blazor.Quartz.Common.DingTalkRobot.Robot;
 using Blazor.Quartz.Core.Const;
 using Blazor.Quartz.Core.Dapper;
 using Blazor.Quartz.Core.Entity;
@@ -23,9 +24,19 @@ namespace Blazor.Quartz.Service
             {
                 try
                 {
-                    //清理7天前的数据
-                    await DbContext.ExecuteAsync($@"DELETE FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE BEGIN_TIME<@START_TIME", new { START_TIME = DateTime.Now.AddDays(-6).Date.ToString("yyyy-MM-dd") });
+                    #region 清理数据
+                    //清理数据
+                    var RunLogStorageDays = AppConfig.RunLogStorageDays;
+                    if (RunLogStorageDays == null)
+                    {
+                        //默认保留7天
+                        RunLogStorageDays = "7";
+                    }
+                    string startTime = DateTime.Now.AddDays(-Convert.ToInt32(RunLogStorageDays)).Date.ToString("yyyy-MM-dd");
+                    await DbContext.ExecuteAsync($@"DELETE FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE BEGIN_TIME<@START_TIME", new { START_TIME = startTime });
+                    #endregion
 
+                    #region 每日报表
                     var sql = $"SELECT * FROM {QuartzConstant.TablePrefix}JOB_DETAILS WHERE 1=1";
                     var dynamicParams = new DynamicParameters();
                     var jobRes = await DbContext.QueryAsync<JOB_DETAILS>(sql, dynamicParams);
@@ -59,6 +70,7 @@ namespace Blazor.Quartz.Service
                     Console.ForegroundColor = ConsoleColor.White;
                     messageModel.Text = msList;
                     await DingTalkRobot.SendMarkdownMessageByModel(messageModel, null, false);
+                    #endregion
                 }
                 catch (Exception ex)
                 {

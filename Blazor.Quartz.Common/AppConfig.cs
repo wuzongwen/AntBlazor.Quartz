@@ -18,5 +18,6 @@ namespace Blazor.Quartz.Common
         public static string ServiceName => ConfigurationManager.GetTryConfig("SysConfig:ServiceName");
         public static string DisplayName => ConfigurationManager.GetTryConfig("SysConfig:DisplayName");
         public static string Description => ConfigurationManager.GetTryConfig("SysConfig:Description");
+        public static string RunLogStorageDays => ConfigurationManager.GetTryConfig("SysConfig:RunLogStorageDays");
     }
 }
