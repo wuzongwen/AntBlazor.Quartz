@@ -36,7 +36,11 @@ namespace Blazor.Quartz.Core.Service.Timer
             var headersString = context.JobDetail.JobDataMap.GetString(QuartzConstant.HEADERS);
             var headers = headersString != null ? JsonConvert.DeserializeObject<Dictionary<string, string>>(headersString?.Trim()) : null;
             var requestType = (RequestTypeEnum)int.Parse(context.JobDetail.JobDataMap.GetString(QuartzConstant.REQUESTTYPE));
-
+            var timeOut = context.JobDetail.JobDataMap.GetIntValueFromString(QuartzConstant.TIMEOUT);
+            if (timeOut == 0) 
+            {
+                timeOut = 30;
+            }
 
             LogInfo.Url = requestUrl;
             LogInfo.RequestType = requestType.ToString();
@@ -54,11 +58,11 @@ namespace Blazor.Quartz.Core.Service.Timer
                     //response = await http.GetAsync(requestUrl, headers);
                     if (headers != null) 
                     {
-                        flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(30).GetAsync();
+                        flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(timeOut).GetAsync();
                     }
                     else 
                     {
-                        flurlResponse = await requestUrl.WithTimeout(30).GetAsync();
+                        flurlResponse = await requestUrl.WithTimeout(timeOut).GetAsync();
                     }
                     response = flurlResponse.ResponseMessage;
                     break;
@@ -68,22 +72,22 @@ namespace Blazor.Quartz.Core.Service.Timer
                     {
                         if (requestParameters != null)
                         {
-                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(30).PostStringAsync(requestParameters);
+                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(timeOut).PostStringAsync(requestParameters);
                         }
                         else
                         {
-                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(30).PostAsync();
+                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(timeOut).PostAsync();
                         }
                     }
                     else 
                     {
                         if (requestParameters != null)
                         {
-                            flurlResponse = await requestUrl.WithTimeout(30).PostStringAsync(requestParameters);
+                            flurlResponse = await requestUrl.WithTimeout(timeOut).PostStringAsync(requestParameters);
                         }
                         else 
                         {
-                            flurlResponse = await requestUrl.WithTimeout(30).PostAsync();
+                            flurlResponse = await requestUrl.WithTimeout(timeOut).PostAsync();
                         }
                     }
                     response = flurlResponse.ResponseMessage;
@@ -94,22 +98,22 @@ namespace Blazor.Quartz.Core.Service.Timer
                     {
                         if (requestParameters != null)
                         {
-                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(30).PutStringAsync(requestParameters);
+                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(timeOut).PutStringAsync(requestParameters);
                         }
                         else 
                         {
-                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(30).PutAsync();
+                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(timeOut).PutAsync();
                         }
                     }
                     else
                     {
                         if (requestParameters != null)
                         {
-                            flurlResponse = await requestUrl.WithTimeout(30).PutStringAsync(requestParameters);
+                            flurlResponse = await requestUrl.WithTimeout(timeOut).PutStringAsync(requestParameters);
                         }
                         else
                         {
-                            flurlResponse = await requestUrl.WithTimeout(30).PutAsync();
+                            flurlResponse = await requestUrl.WithTimeout(timeOut).PutAsync();
                         }
                     }
                     response = flurlResponse.ResponseMessage;
@@ -118,11 +122,11 @@ namespace Blazor.Quartz.Core.Service.Timer
                     //response = await http.DeleteAsync(requestUrl, headers);
                     if (headers != null)
                     {
-                        flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(30).DeleteAsync();
+                        flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(timeOut).DeleteAsync();
                     }
                     else
                     {
-                        flurlResponse = await requestUrl.WithTimeout(30).DeleteAsync();
+                        flurlResponse = await requestUrl.WithTimeout(timeOut).DeleteAsync();
                     }
                     response = flurlResponse.ResponseMessage;
                     break;

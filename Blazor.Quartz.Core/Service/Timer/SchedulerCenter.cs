@@ -191,6 +191,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                     httpDir.Add(QuartzConstant.HEADERS, entity.Headers);
                     httpDir.Add(QuartzConstant.REQUESTPARAMETERS, entity.RequestParameters);
                     httpDir.Add(QuartzConstant.REQUESTTYPE, ((int)entity.RequestType).ToString());
+                    httpDir.Add(QuartzConstant.TIMEOUT, entity.TimeOut.ToString());
                 }
 
                 // 定义这个工作，并将其绑定到我们的IJob实现类                
@@ -352,6 +353,7 @@ namespace Blazor.Quartz.Core.Service.Timer
             if (intervalSeconds.HasValue) entity.IntervalSecond = Convert.ToInt32(intervalSeconds.Value);
             entity.JobGroup = jobGroup;
             entity.JobName = jobName;
+            entity.TimeOut = jobDetail.JobDataMap.GetIntValueFromString(QuartzConstant.TIMEOUT);
             entity.Cron = (triggers as CronTriggerImpl)?.CronExpressionString;
             entity.RunTimes = (triggers as SimpleTriggerImpl)?.RepeatCount;
             entity.TriggerType = triggers is SimpleTriggerImpl ? TriggerTypeEnum.Simple : TriggerTypeEnum.Cron;

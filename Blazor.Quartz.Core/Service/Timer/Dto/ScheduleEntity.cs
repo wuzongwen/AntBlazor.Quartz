@@ -71,6 +71,10 @@ namespace Blazor.Quartz.Core.Service.Timer.Dto
         /// </summary>
         public string RequestParameters { get; set; }
         /// <summary>
+        /// 超时时间(单位秒)
+        /// </summary>
+        public int? TimeOut { get; set; }
+        /// <summary>
         /// Headers(可以包含如：Authorization授权认证)
         /// 格式：{"Authorization":"userpassword.."}
         /// </summary>

@@ -54,6 +54,11 @@ namespace Blazor.Quartz.Core.Service.Timer.Dto
         public string Headers { get; set; }
 
         /// <summary>
+        /// 超时时长(秒)
+        /// </summary>
+        public int TimeOut { get; set; }
+
+        /// <summary>
         /// 响应数据
         /// </summary>
         public string Res_Data { get; set; }

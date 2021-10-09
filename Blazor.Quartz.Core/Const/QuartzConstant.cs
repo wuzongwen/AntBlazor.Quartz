@@ -41,6 +41,11 @@ namespace Blazor.Quartz.Core.Const
         /// </summary>
         public const string RUNNUMBER = "RunNumber";
 
+        /// <summary>
+        /// 超时时长
+        /// </summary>
+        public const string TIMEOUT = "TimeOut";
+
         public const string MailTitle = "MailTitle";
         public const string MailContent = "MailContent";
         public const string MailTo = "MailTo";

@@ -48,13 +48,18 @@ namespace Blazor.Quartz.Common.PollyClient
                     .WaitAndRetryAsync(new[]
                     {
                         // 表示重试3次，第一次1秒后重试，第二次2秒后重试，第三次4秒后重试
-                        TimeSpan.FromSeconds(1),
-                        TimeSpan.FromSeconds(2),
-                        TimeSpan.FromSeconds(4)
+                        TimeSpan.FromSeconds(10),
+                        TimeSpan.FromSeconds(30),
+                        TimeSpan.FromSeconds(60)
                     }, (result, span, count, context) =>
                     {
                         if (count == 3)
                         {
+                            Task.Run(async() =>
+                            {
+                               await DingTalkRobot.Robot.DingTalkRobot.SendTextMessage($"外部接口请求异常:{result.Exception}", null, false);
+                            });
+                            
                             //LoggerHelper.Warn($"外部接口请求异常:{result.Exception}");
                         }
                     });

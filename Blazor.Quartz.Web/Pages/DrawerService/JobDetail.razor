@@ -64,7 +64,7 @@
                         <AntDesign.InputNumber @bind-Value="@model.IntervalSecond" OnChange="DataSave" TValue="int?" Min="1" Max="99999" DefaultValue="10"></AntDesign.InputNumber>
                     </FormItem>
                     <FormItem Label="执行次数(默认无限循环)">
-                        <AntDesign.InputNumber @bind-Value="@model.RunTimes" Placeholder="默认无限循环" OnChange="DataSave" TValue="int?"  Min="1" Max="99999"></AntDesign.InputNumber>
+                        <AntDesign.InputNumber @bind-Value="@model.RunTimes" Placeholder="默认无限循环" OnChange="DataSave" TValue="int?" Min="1" Max="99999"></AntDesign.InputNumber>
                     </FormItem>
                     break;
                 case TriggerTypeEnum.Cron:
@@ -74,6 +74,9 @@
                     break;
             }
         }
+        <FormItem Label="超时时长(单位秒)">
+            <AntDesign.InputNumber @bind-Value="@model.TimeOut" Placeholder="默认30秒" OnChange="DataSave" TValue="int?" Min="1" Max="99999"></AntDesign.InputNumber>
+        </FormItem>
         <FormItem Label="请求头">
             <Input Placeholder="格式为Json键值对如{'authorization':'xxxxxx'}" @bind-Value="@context.Headers" OnChange="DataSave" TValue="string" />
         </FormItem>
@@ -147,6 +150,7 @@
             model.TriggerType = data.TriggerType;
             model.Cron = data.Cron;
             model.IntervalSecond = data.IntervalSecond;
+            model.TimeOut = data.TimeOut;
             model.Headers = data.Headers;
             model.RequestParameters = data.RequestParameters;
             model.Description = data.Description;
