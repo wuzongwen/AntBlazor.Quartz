@@ -31,5 +31,13 @@
     <script src="_content/AntDesign/js/ant-design-blazor.js"></script>
     <script src="_content/AntDesign.Charts/g2plot.js"></script>
     <script src="_content/AntDesign.Charts/ant-design-charts-blazor.js"></script>
+    <environment include="Production">
+        <script>
+            window.Blazor.defaultReconnectionHandler.onConnectionDown = function () {
+                console.log('reloading')
+                window.location.reload();
+            };
+        </script>
+    </environment>
 </body>
 </html>
