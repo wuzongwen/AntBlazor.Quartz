@@ -41,9 +41,13 @@
                     switch (context.IS_ENABLE)
                     {
                         case AppStatusEnum.Enable:
-                            <Button Type="primary" Danger OnClick="@(()=>Pause(context.JOB_GROUP_NAME,context.IS_ENABLE))">
-                                停用
-                            </Button>
+                            <Popconfirm Title="此操作将会停用该应用下的所有任务，确认停用吗?"
+                            OnConfirm="@(()=>Pause(context.JOB_GROUP_NAME,context.IS_ENABLE))"
+                            OnCancel="Cancel"
+                            OkText="是"
+                            CancelText="否">
+                                <Button Type="primary" Danger>停用</Button>
+                            </Popconfirm>
                             break;
                         case AppStatusEnum.Disable:
                             <Button Type="primary" Block OnClick="@(()=>Pause(context.JOB_GROUP_NAME,context.IS_ENABLE))">
@@ -207,5 +211,13 @@
         {
             await _message.Error(res.Msg);
         }
+    }
+
+    /// <summary>
+    /// 取消操作
+    /// </summary>
+    private void Cancel()
+    {
+        //_message.Error("Clicked on No");
     }
 }
