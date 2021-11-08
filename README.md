@@ -1,5 +1,5 @@
 # AntBlazor.Quartz
-AntDesign+Quartz任务调度
+可配置钉钉机器人接收错误日志及每日报表等信息,暂未添加登录功能，有需要的自己改造下即可
 # 数据面板
 ![数据面板](https://github.com/wuzongwen/picturehost/blob/main/Blazor.Quartz/20211108164543.png)
 # 应用管理
