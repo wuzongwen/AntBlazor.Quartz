@@ -8,6 +8,7 @@ namespace Blazor.Quartz.Core.Service.App.Dto
 {
     public class QueryDto
     {
+        public string AppName { get; set; }
         public string Name { get; set; }
     }
 }

@@ -36,10 +36,12 @@ namespace Blazor.Quartz.Core.Service.Timer
             var headersString = context.JobDetail.JobDataMap.GetString(QuartzConstant.HEADERS);
             var headers = headersString != null ? JsonConvert.DeserializeObject<Dictionary<string, string>>(headersString?.Trim()) : null;
             var requestType = (RequestTypeEnum)int.Parse(context.JobDetail.JobDataMap.GetString(QuartzConstant.REQUESTTYPE));
-            var timeOut = context.JobDetail.JobDataMap.GetIntValueFromString(QuartzConstant.TIMEOUT);
-            if (timeOut == 0) 
+            var timeOut = 30;
+            var TimeOut = context.JobDetail.JobDataMap.GetString(QuartzConstant.TIMEOUT);
+            if (!string.IsNullOrEmpty(TimeOut))
             {
-                timeOut = 30;
+                //entity.TimeOut = jobDetail.JobDataMap.GetIntValueFromString(QuartzConstant.TIMEOUT);
+                timeOut = Convert.ToInt32(TimeOut);
             }
 
             LogInfo.Url = requestUrl;

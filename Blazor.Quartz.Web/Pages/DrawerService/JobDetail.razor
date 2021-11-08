@@ -16,8 +16,10 @@
       OnFinishFailed="OnFinishFailed"
       ValidateOnChange="true">
     <ChildContent>
-        <FormItem Label="所属应用">
-            <Select DataSource="@appInfoList"
+        @if (actionType == 1)
+        {
+            <FormItem Label="所属应用">
+                <Select Disabled DataSource="@appInfoList"
                     OnSelectedItemChanged="OnSelectedItemChangedHandler"
                     @bind-Value="@context.JobGroup"
                     ValueName="@nameof(AppInfo.JOB_GROUP_NAME)"
@@ -25,11 +27,29 @@
                     Placeholder="请选项任务所属应用"
                     DefaultValue="@context.JobGroup"
                     DefaultActiveFirstItem="false">
-            </Select>
-        </FormItem>
-        <FormItem Label="任务名称">
-            <Input Placeholder="请输入任务名称" @bind-Value="@context.JobName" OnChange="DataSave" TValue="string" />
-        </FormItem>
+                </Select>
+            </FormItem>
+            <FormItem Label="任务名称">
+                <Input Placeholder="请输入任务名称" Disabled @bind-Value="@context.JobName" OnChange="DataSave" TValue="string" />
+            </FormItem>
+        }
+        else
+        {
+            <FormItem Label="所属应用">
+                <Select DataSource="@appInfoList"
+                    OnSelectedItemChanged="OnSelectedItemChangedHandler"
+                    @bind-Value="@context.JobGroup"
+                    ValueName="@nameof(AppInfo.JOB_GROUP_NAME)"
+                    LabelName="@nameof(AppInfo.JOB_GROUP_NAME)"
+                    Placeholder="请选择任务所属应用"
+                    DefaultValue="@context.JobGroup"
+                    DefaultActiveFirstItem="false">
+                </Select>
+            </FormItem>
+            <FormItem Label="任务名称">
+                <Input Placeholder="请输入任务名称" @bind-Value="@context.JobName" OnChange="DataSave" TValue="string" />
+            </FormItem>
+        }
         <FormItem Label="请求地址">
             <Input Placeholder="请输入请求地址" @bind-Value="@context.RequestUrl" OnChange="DataSave" TValue="string" />
         </FormItem>
@@ -255,7 +275,7 @@
 
     private void OnSelectedItemChangedHandler(AppInfo app)
     {
-        if(app!=null)
+        if (app != null)
             model.JobGroup = app.JOB_GROUP_NAME;
         DataSave();
     }

@@ -1,6 +1,7 @@
 ﻿@page "/job"
 @using Blazor.Quartz.Core.Service.Timer.Dto
 @using Blazor.Quartz.Core.Service.Timer
+@using Blazor.Quartz.Core.Service.App
 @using Blazor.Quartz.Core.Service.App.Enum
 @using Blazor.Quartz.Core.Service.App.Dto
 @using Blazor.Quartz.Core.Service.Base.Dto
@@ -8,13 +9,22 @@
 @inject ConfirmService confirmService
 @inject MessageService _message
 @inject ModalService _modalService
+@inject IAppService appservice
 @inject IConfiguration Configuration
 @inject SchedulerCenter scheduler
 @inject NavigationManager Nav
 <PageHeader Title="任务列表">
     <PageHeaderContent>
         <Form Layout="@FormLayout.Inline" Model="queryDto">
-            <FormItem Label="任务名称">
+            <FormItem Label="所属应用" Style="width:300px">
+                <Select DataSource="@appInfoList"
+                    @bind-Value="queryDto.AppName"
+                    ValueName="@nameof(AppInfo.JOB_GROUP_NAME)"
+                    LabelName="@nameof(AppInfo.JOB_GROUP_NAME)"
+                    DefaultActiveFirstItem="false">
+                </Select>
+            </FormItem>
+            <FormItem Label="任务名称" Style="width:300px">
                 <Input @bind-Value="queryDto.Name" />
             </FormItem>
             <FormItem>
@@ -119,6 +129,7 @@
 </Table>
 @code{
     private List<JobBriefInfo> jobItems;
+    private List<AppInfo> appInfoList;
 
     private QueryDto queryDto = new QueryDto();
 
@@ -136,6 +147,10 @@
     {
         try
         {
+            //获取应用列表
+            var appInfoListRes = await appservice.GetList(new QueryModel());
+            appInfoList = appInfoListRes.Data;
+
             isLoading = true;
             //var response = await Http.GetAsync($"{Configuration["ApiUri"]}/api/file/getlist?name={queryDto.Name}");
             //HttpClient client = new HttpClient();
@@ -186,6 +201,7 @@
         {
             ScheduleEntity JobInfo = await scheduler.QueryJobAsync(JOB_GROUP_NAME, JOB_NAME);
             value = JsonConvert.SerializeObject(JobInfo);
+            options.Title = "编辑任务";
         }
 
         var drawerRef = await DrawerService.CreateAsync<JobDetail, string, string>(options, value);
@@ -200,11 +216,11 @@
         {
             Console.WriteLine("OnAfterClosing:");
             await Task.CompletedTask;
-            //if (await confirmService.Show("取消后填写的数据将销毁?", "确定取消?", ConfirmButtons.YesNo) == ConfirmResult.No)
-            //{
-            //    handle.Reject();
-            //}
-        };
+        //if (await confirmService.Show("取消后填写的数据将销毁?", "确定取消?", ConfirmButtons.YesNo) == ConfirmResult.No)
+        //{
+        //    handle.Reject();
+        //}
+    };
 
         drawerRef.OnClosed = async result =>
         {
@@ -213,22 +229,22 @@
             {
                 if (result == "true")
                 {
-                    ////跳转
-                    //Nav.NavigateTo("job");
+                ////跳转
+                //Nav.NavigateTo("job");
 
-                    //重载数据
-                    var data = await scheduler.GetAllJobBriefInfoAsync_New();
+                //重载数据
+                var data = await scheduler.GetAllJobBriefInfoAsync_New();
                     jobItems = new List<JobBriefInfo>();
                     if (data.Count > 0)
                     {
                         jobItems = data;
                     }
 
-                    ////重载页面
-                    //await OnInitializedAsync();
+                ////重载页面
+                //await OnInitializedAsync();
 
 
-                }
+            }
             }
             await InvokeAsync(StateHasChanged);
         };
@@ -313,11 +329,11 @@
         {
             Console.WriteLine("OnAfterClosing:");
             await Task.CompletedTask;
-            //if (await confirmService.Show("取消后填写的数据将销毁?", "确定取消?", ConfirmButtons.YesNo) == ConfirmResult.No)
-            //{
-            //    handle.Reject();
-            //}
-        };
+        //if (await confirmService.Show("取消后填写的数据将销毁?", "确定取消?", ConfirmButtons.YesNo) == ConfirmResult.No)
+        //{
+        //    handle.Reject();
+        //}
+    };
 
         drawerRef.OnClosed = async result =>
         {
@@ -350,6 +366,10 @@
         {
             data = data.Where(o => o.Name.Contains(queryDto.Name)).ToList();
         }
-        jobItems = data;
+        if (queryDto.AppName != null)
+        {
+            data = data.Where(o => o.GroupName.Contains(queryDto.AppName)).ToList();
+        }
+        jobItems = data.OrderBy(o => o.GroupName).ToList();
     }
 }

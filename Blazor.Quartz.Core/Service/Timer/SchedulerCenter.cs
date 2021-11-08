@@ -353,7 +353,12 @@ namespace Blazor.Quartz.Core.Service.Timer
             if (intervalSeconds.HasValue) entity.IntervalSecond = Convert.ToInt32(intervalSeconds.Value);
             entity.JobGroup = jobGroup;
             entity.JobName = jobName;
-            entity.TimeOut = jobDetail.JobDataMap.GetIntValueFromString(QuartzConstant.TIMEOUT);
+            var TimeOut = jobDetail.JobDataMap.GetString(QuartzConstant.TIMEOUT);
+            if (!string.IsNullOrEmpty(TimeOut)) 
+            {
+                //entity.TimeOut = jobDetail.JobDataMap.GetIntValueFromString(QuartzConstant.TIMEOUT);
+                entity.TimeOut = Convert.ToInt32(TimeOut);
+            }
             entity.Cron = (triggers as CronTriggerImpl)?.CronExpressionString;
             entity.RunTimes = (triggers as SimpleTriggerImpl)?.RepeatCount;
             entity.TriggerType = triggers is SimpleTriggerImpl ? TriggerTypeEnum.Simple : TriggerTypeEnum.Cron;
