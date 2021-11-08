@@ -12,6 +12,8 @@ namespace Blazor.Quartz.Core.Service.App.Dto
 
         public string name { get; set; }
 
+        public int? status { get; set; }
+
         public string start_time { get; set; }
 
         public string end_time { get; set; }

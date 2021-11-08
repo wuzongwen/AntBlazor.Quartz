@@ -68,12 +68,13 @@
     /// <returns></returns>
     private async Task LoadTable()
     {
-        var jobInfo = JsonConvert.DeserializeObject<ScheduleEntity>(base.Options);
-        var querylogDto = new QueryLogDto();
+        //var jobInfo = JsonConvert.DeserializeObject<ScheduleEntity>(base.Options);
+        //var querylogDto = new QueryLogDto();
+        var querylogDto = JsonConvert.DeserializeObject<QueryLogDto>(base.Options);
         var start_time = DateTime.Now.AddYears(-10);
         var end_time = DateTime.Now;
-        querylogDto.group = jobInfo.JobGroup;
-        querylogDto.name = jobInfo.JobName;
+        //querylogDto.group = jobInfo.JobGroup;
+        //querylogDto.name = jobInfo.JobName;
         querylogDto.start_time = start_time.ToString("yyyy-MM-dd HH:mm:ss");
         querylogDto.end_time = end_time.ToString("yyyy-MM-dd HH:mm:ss");
         logItems = await joblogservice.GetList(querylogDto);

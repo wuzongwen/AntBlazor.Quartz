@@ -70,9 +70,18 @@
             <Tag Color="@color">@context.DisplayState</Tag>
         }
     </Column>
-    <Column @bind-Field="@context.RunNumber"></Column>
+    <Column @bind-Field="@context.RunNumber">
+        <Button Type="@ButtonType.Link" style="color: #000000;cursor:text">@context.RunNumber</Button>
+    </Column>
     <Column @bind-Field="@context.ErrorNumber" Title="异常次数">
-        <span style="color: #ff0000 ">@context.ErrorNumber</span>
+        @if (@context.ErrorNumber > 0)
+        {
+            <Button Type="@ButtonType.Link" OnClick="@(()=>GetLog(context.GroupName,context.Name,0))" style="color: #ff0000;float:left">@context.ErrorNumber</Button>
+        }
+        else
+        {
+             <Button Type="@ButtonType.Link" style="color: #ff0000;float:left">@context.ErrorNumber</Button>
+        }
     </Column>
     <ActionColumn Title="操作">
         <Space Size="middle">
@@ -115,7 +124,7 @@
                 </Button>
             </SpaceItem>
             <SpaceItem>
-                <Button OnClick="@(()=>GetLog(context.GroupName,context.Name))">
+                <Button OnClick="@(()=>GetLog(context.GroupName,context.Name,null))">
                     查看日志
                 </Button>
             </SpaceItem>
@@ -220,7 +229,7 @@
         //{
         //    handle.Reject();
         //}
-    };
+        };
 
         drawerRef.OnClosed = async result =>
         {
@@ -299,10 +308,10 @@
     }
 
     /// <summary>
-    /// 立即执行
+    /// 查看日志
     /// </summary>
     /// <returns></returns>
-    private async Task GetLog(string JOB_GROUP_NAME, string JOB_NAME)
+    private async Task GetLog(string JOB_GROUP_NAME, string JOB_NAME,int? STATUS)
     {
         var options = new DrawerOptions()
         {
@@ -314,7 +323,11 @@
         if (JOB_GROUP_NAME != null && JOB_NAME != null)
         {
             ScheduleEntity JobInfo = await scheduler.QueryJobAsync(JOB_GROUP_NAME, JOB_NAME);
-            value = JsonConvert.SerializeObject(JobInfo);
+            QueryLogDto queryLogDto = new QueryLogDto();
+            queryLogDto.name = JobInfo.JobName;
+            queryLogDto.group = JobInfo.JobGroup;
+            queryLogDto.status = STATUS;
+            value = JsonConvert.SerializeObject(queryLogDto);
         }
 
         var drawerRef = await DrawerService.CreateAsync<LogList, string, string>(options, value);
