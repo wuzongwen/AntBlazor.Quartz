@@ -27,7 +27,7 @@ namespace Blazor.Quartz.Service
             // ITrigger triggerNow = TriggerBuilder.Create().StartNow().Build();
             ITrigger trigger = TriggerBuilder.Create()
                 .StartNow()
-                .WithCronSchedule("0 0/5 * * * ?")
+                .WithCronSchedule("0 0/10 * * * ?")
                 .Build();
 
             scheduler.ScheduleJob(job, trigger);
