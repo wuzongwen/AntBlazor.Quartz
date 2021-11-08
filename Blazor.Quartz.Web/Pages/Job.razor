@@ -129,9 +129,19 @@
                 </Button>
             </SpaceItem>
             <SpaceItem>
-                <Button OnClick="@(()=>ExecuteNow(context.GroupName,context.Name))">
-                    立即执行
-                </Button>
+                @{
+                    switch (context.TriggerState)
+                    {
+                        case global::Quartz.TriggerState.Paused:
+
+                            break;
+                        default:
+                            <Button OnClick="@(()=>ExecuteNow(context.GroupName,context.Name))">
+                                立即执行
+                            </Button>
+                            break;
+                    }
+                }
             </SpaceItem>
         </Space>
     </ActionColumn>
