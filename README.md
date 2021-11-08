@@ -10,3 +10,5 @@
 ![新增任务](https://github.com/wuzongwen/picturehost/blob/main/Blazor.Quartz/20211108170156.png)
 # 日志列表
 ![日志列表](https://github.com/wuzongwen/picturehost/blob/main/Blazor.Quartz/20211108165511.png)
+# 钉钉机器人
+![钉钉机器人](https://github.com/wuzongwen/picturehost/blob/main/Blazor.Quartz/20211108170354.png)
