@@ -63,7 +63,7 @@ namespace Blazor.Quartz.Service
                     {
                         var thisJobLogList = jobLogList.Where(o => o.JOB_NAME == item.JOB_NAME && o.JOB_GROUP == item.JOB_GROUP).ToList();
                         var errCount = thisJobLogList.Count(o => o.EXECUTION_STATUS == ExecutionStatusEnum.Failure);
-                        var thisMsg = $"{item.JOB_NAME} 执行{thisJobLogList.Count()}次 异常{errCount}次";
+                        var thisMsg = $"{item.JOB_GROUP}-{item.JOB_NAME} 执行{thisJobLogList.Count()}次 异常{errCount}次";
                         msList.Add(thisMsg);
                         Console.WriteLine(thisMsg);
                     }
