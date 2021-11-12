@@ -41,7 +41,7 @@ namespace Blazor.Quartz.Service
                     var sql = $"SELECT * FROM {QuartzConstant.TablePrefix}JOB_DETAILS WHERE 1=1";
                     var dynamicParams = new DynamicParameters();
                     var jobRes = await DbContext.QueryAsync<JOB_DETAILS>(sql, dynamicParams);
-                    var jobList = jobRes.ToList();
+                    var jobList = jobRes.OrderBy(o => new { o.JOB_GROUP, o.JOB_NAME }).ToList();
 
                     var jobLogRes = await DbContext.QueryAsync<JOB_EXECUTION_LOG>($@"SELECT [JOB_NAME]
                             ,[JOB_GROUP]
