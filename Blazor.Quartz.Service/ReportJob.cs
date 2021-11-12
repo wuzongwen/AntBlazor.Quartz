@@ -8,6 +8,7 @@ using Blazor.Quartz.Core.Service.App.Enum;
 using Dapper;
 using Newtonsoft.Json;
 using Quartz;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -74,6 +75,7 @@ namespace Blazor.Quartz.Service
                 }
                 catch (Exception ex)
                 {
+                    Log.Error(ex, "【任务调度每日报表】【异常】");
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"【任务调度每日报表】【异常】消息:{ex.Message}");
                     Console.ForegroundColor = ConsoleColor.White;

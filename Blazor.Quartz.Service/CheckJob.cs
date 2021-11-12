@@ -36,7 +36,7 @@ namespace Blazor.Quartz.Service
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"【心跳检查】【异常】消息:{ex.Message}");
                     Console.ForegroundColor = ConsoleColor.White;
-                    Log.Error($"【心跳检查】【异常】消息:{ex}");
+                    Log.Error(ex, "【心跳检查】【异常】");
                     await DingTalkRobot.SendTextMessage($"【心跳检查】【异常】消息:{ex.Message}", null, false);
                 }
                 finally

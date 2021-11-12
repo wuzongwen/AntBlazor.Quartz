@@ -1,4 +1,5 @@
-﻿using Quartz;
+﻿using Blazor.Quartz.Common;
+using Quartz;
 using Quartz.Impl;
 using System;
 using System.Collections.Generic;
@@ -27,7 +28,7 @@ namespace Blazor.Quartz.Service
             // ITrigger triggerNow = TriggerBuilder.Create().StartNow().Build();
             ITrigger trigger = TriggerBuilder.Create()
                 .StartNow()
-                .WithCronSchedule("0 0/10 * * * ?")
+                .WithCronSchedule(AppConfig.CheckJobCron)
                 .Build();
 
             scheduler.ScheduleJob(job, trigger);
@@ -37,7 +38,7 @@ namespace Blazor.Quartz.Service
             // ITrigger triggerNow = TriggerBuilder.Create().StartNow().Build();
             ITrigger trigger2 = TriggerBuilder.Create()
                 .StartNow()
-                .WithCronSchedule("0 30 9 * * ?")
+                .WithCronSchedule(AppConfig.ReportJobCron)
                 .Build();
 
             scheduler.ScheduleJob(job2, trigger2);
