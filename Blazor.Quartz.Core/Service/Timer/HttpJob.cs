@@ -149,18 +149,19 @@ namespace Blazor.Quartz.Core.Service.Timer
             {
                 try
                 {
-                    ////这里需要和请求方约定好返回结果约定为HttpResultModel模型
-                    //var httpResult = JsonConvert.DeserializeObject<HttpResultModel>(HttpUtility.HtmlDecode(result));
-                    //if (!httpResult.IsSuccess)
-                    //{
-                    //    LogInfo.Status = ExecutionStatusEnum.Failure;
-                    //    LogInfo.ErrorMsg = $"<span class='error'>{httpResult.ErrorMsg}</span>";
-                    //    await ErrorAsync(LogInfo.JobName, new Exception(httpResult.ErrorMsg), JsonConvert.SerializeObject(LogInfo));
-                    //    context.JobDetail.JobDataMap[QuartzConstant.EXCEPTION] = $"<div class='err-time'>{LogInfo.BeginTime}</div>{JsonConvert.SerializeObject(LogInfo)}";
-                    //}
-                    //else
-                    //    LogInfo.Status = ExecutionStatusEnum.Success;
-                    LogInfo.Status = ExecutionStatusEnum.Success;
+                    //这里需要和请求方约定好返回结果约定为HttpResultModel模型
+                    var httpResult = JsonConvert.DeserializeObject<HttpResultModel>(HttpUtility.HtmlDecode(result));
+                    if (!httpResult.isSuccess && httpResult.resCode != 0)
+                    {
+                        LogInfo.Status = ExecutionStatusEnum.Failure;
+                        LogInfo.ErrorMsg = $"<span class='error'>{httpResult.resMsg}</span>";
+                        await ErrorAsync(LogInfo.JobName, new Exception(httpResult.resMsg), JsonConvert.SerializeObject(LogInfo));
+                        context.JobDetail.JobDataMap[QuartzConstant.EXCEPTION] = $"<div class='err-time'>{LogInfo.BeginTime}</div>{JsonConvert.SerializeObject(LogInfo)}";
+                    }
+                    else 
+                    {
+                        LogInfo.Status = ExecutionStatusEnum.Success;
+                    }
                 }
                 catch (Exception ex)
                 {
