@@ -414,29 +414,6 @@ namespace Blazor.Quartz.Core.Service.Timer
         }
 
         /// <summary>
-        /// 获取job日志
-        /// </summary>
-        /// <param name="jobKey"></param>
-        /// <returns></returns>
-        public async Task<List<string>> GetJobLogsAsync(JobKey jobKey)
-        {
-            var jobDetail = await scheduler.GetJobDetail(jobKey);
-            return jobDetail.JobDataMap[QuartzConstant.LOGLIST] as List<string>;
-        }
-
-        /// <summary>
-        /// 获取job日志
-        /// </summary>
-        /// <param name="jobKey"></param>
-        /// <returns></returns>
-        public async Task<List<string>> GetJobLogsByJobInfoAsync(string jobGroup, string jobName)
-        {
-            var jobKey = new JobKey(jobName, jobGroup);
-            var jobDetail = await scheduler.GetJobDetail(jobKey);
-            return jobDetail.JobDataMap[QuartzConstant.LOGLIST] as List<string>;
-        }
-
-        /// <summary>
         /// 获取运行次数
         /// </summary>
         /// <param name="jobKey"></param>

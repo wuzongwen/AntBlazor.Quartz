@@ -21,7 +21,6 @@ namespace Blazor.Quartz.Core.Service.Timer
     [PersistJobDataAfterExecution]
     public abstract class JobBase<T> where T : LogModel, new()
     {
-        protected readonly int maxLogCount = 20;//最多保存日志数量  
         protected readonly int warnTime = 20;//接口请求超过多少秒记录警告日志 
         protected Stopwatch stopwatch = new Stopwatch();
         protected T LogInfo { get; private set; }
@@ -44,10 +43,6 @@ namespace Blazor.Quartz.Core.Service.Timer
             //记录执行次数
             var runNumber = context.JobDetail.JobDataMap.GetLong(QuartzConstant.RUNNUMBER);
             context.JobDetail.JobDataMap[QuartzConstant.RUNNUMBER] = ++runNumber;
-
-            var logs = context.JobDetail.JobDataMap[QuartzConstant.LOGLIST] as List<string> ?? new List<string>();
-            if (logs.Count >= maxLogCount)
-                logs.RemoveRange(0, logs.Count - maxLogCount);
 
             stopwatch.Restart(); //  开始监视代码运行时间
 
@@ -79,8 +74,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                     LogInfo.ExecuteTime = stopwatch.Elapsed.TotalMilliseconds + "毫秒";
 
                 var classErr = string.IsNullOrWhiteSpace(LogInfo.ErrorMsg) ? "" : "error";
-                logs.Add($"<p class='msgList {classErr}'><span class='time'>{LogInfo.BeginTime} 至 {LogInfo.EndTime}  【耗时】{LogInfo.ExecuteTime}</span>{JsonConvert.SerializeObject(LogInfo)}</p>");
-                context.JobDetail.JobDataMap[QuartzConstant.LOGLIST] = logs;
+               
                 if (seconds >= warnTime)//如果请求超过20秒，警告  
                 {
                     await WarningAsync(LogInfo.JobName, "耗时过长 - " + JsonConvert.SerializeObject(LogInfo));

@@ -26,10 +26,6 @@ namespace Blazor.Quartz.Core.Service.Timer.Const
         /// </summary>
         public const string REQUESTTYPE = "RequestType";
         /// <summary>
-        /// 日志 LogList
-        /// </summary>
-        public const string LOGLIST = "LogList";
-        /// <summary>
         /// 异常 Exception
         /// </summary>
         public const string EXCEPTION = "Exception";
