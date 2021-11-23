@@ -21,10 +21,6 @@ namespace Blazor.Quartz.Core.Const
         /// </summary>
         public const string HEADERS = "Headers";
         /// <summary>
-        /// 是否发送邮件
-        /// </summary>
-        public const string MAILMESSAGE = "MailMessage";
-        /// <summary>
         /// 请求类型 RequestType
         /// </summary>
         public const string REQUESTTYPE = "RequestType";
@@ -45,10 +41,6 @@ namespace Blazor.Quartz.Core.Const
         /// 超时时长
         /// </summary>
         public const string TIMEOUT = "TimeOut";
-
-        public const string MailTitle = "MailTitle";
-        public const string MailContent = "MailContent";
-        public const string MailTo = "MailTo";
 
         public const string JobTypeEnum = "JobTypeEnum";
 

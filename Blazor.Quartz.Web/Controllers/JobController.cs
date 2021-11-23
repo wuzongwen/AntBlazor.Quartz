@@ -158,19 +158,6 @@ namespace Blazor.Quartz.Web.Controllers
         }
 
         /// <summary>
-        /// 获取job日志
-        /// </summary>
-        /// <param name="jobKey"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public async Task<List<string>> GetJobLogs([FromBody] JobKey jobKey)
-        {
-            var logs = await scheduler.GetJobLogsAsync(jobKey);
-            logs?.Reverse();
-            return logs;
-        }
-
-        /// <summary>
         /// 启动调度
         /// </summary>
         /// <returns></returns>

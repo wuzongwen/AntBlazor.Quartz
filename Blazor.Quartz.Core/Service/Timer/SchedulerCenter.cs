@@ -178,7 +178,6 @@ namespace Blazor.Quartz.Core.Service.Timer
                 {
                     { QuartzConstant.EndAt, entity.EndTime.ToString()},
                     { QuartzConstant.JobTypeEnum, ((int)entity.JobType).ToString()},
-                    { QuartzConstant.MAILMESSAGE, ((int)entity.MailMessage).ToString()},
                 };
                 if (runNumber.HasValue)
                     httpDir.Add(QuartzConstant.RUNNUMBER, runNumber.ToString());
@@ -362,7 +361,6 @@ namespace Blazor.Quartz.Core.Service.Timer
             entity.Cron = (triggers as CronTriggerImpl)?.CronExpressionString;
             entity.RunTimes = (triggers as SimpleTriggerImpl)?.RepeatCount;
             entity.TriggerType = triggers is SimpleTriggerImpl ? TriggerTypeEnum.Simple : TriggerTypeEnum.Cron;
-            entity.MailMessage = (MailMessageEnum)int.Parse(jobDetail.JobDataMap.GetString(QuartzConstant.MAILMESSAGE) ?? "0");
             entity.Description = jobDetail.Description;
             //旧代码没有保存JobTypeEnum，所以None可以默认为Url。
             entity.JobType = (JobTypeEnum)int.Parse(jobDetail.JobDataMap.GetString(QuartzConstant.JobTypeEnum) ?? "1");
@@ -376,13 +374,6 @@ namespace Blazor.Quartz.Core.Service.Timer
                     entity.RequestType = (RequestTypeEnum)int.Parse(jobDetail.JobDataMap.GetString(QuartzConstant.REQUESTTYPE));
                     entity.RequestParameters = jobDetail.JobDataMap.GetString(QuartzConstant.REQUESTPARAMETERS);
                     entity.Headers = jobDetail.JobDataMap.GetString(QuartzConstant.HEADERS);
-                    break;
-                case JobTypeEnum.Emial:
-                    entity.MailTitle = jobDetail.JobDataMap.GetString(QuartzConstant.MailTitle);
-                    entity.MailContent = jobDetail.JobDataMap.GetString(QuartzConstant.MailContent);
-                    entity.MailTo = jobDetail.JobDataMap.GetString(QuartzConstant.MailTo);
-                    break;
-                case JobTypeEnum.Hotreload:
                     break;
                 default:
                     break;
@@ -461,10 +452,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                         var triggerAddress = string.Empty;
                         if (jobType == JobTypeEnum.Url)
                             triggerAddress = jobDetail.JobDataMap.GetString(QuartzConstant.REQUESTURL);
-                        else if (jobType == JobTypeEnum.Emial)
-                            triggerAddress = jobDetail.JobDataMap.GetString(QuartzConstant.MailTo);
 
-                        //Constant.MailTo
                         jobInfo.JobInfoList.Add(new JobInfo()
                         {
                             Name = jobKey.Name,

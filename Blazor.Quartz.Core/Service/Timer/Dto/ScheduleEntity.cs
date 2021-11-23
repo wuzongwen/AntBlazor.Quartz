@@ -58,8 +58,6 @@ namespace Blazor.Quartz.Core.Service.Timer.Dto
         /// </summary>
         public string Description { get; set; }
 
-        public MailMessageEnum MailMessage { get; set; }
-
         #region Url
         /// <summary>
         /// 请求url
@@ -83,12 +81,6 @@ namespace Blazor.Quartz.Core.Service.Timer.Dto
         /// 请求类型
         /// </summary>
         public RequestTypeEnum RequestType { get; set; } = RequestTypeEnum.Post;
-        #endregion
-
-        #region Emial
-        public string MailTitle { get; set; }
-        public string MailContent { get; set; }
-        public string MailTo { get; set; }
         #endregion
     }
 }
