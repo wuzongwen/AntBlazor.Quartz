@@ -1,5 +1,6 @@
 ﻿@page "/"
 @using AntDesign.Charts
+@using Blazor.Quartz.Core.Service.App.Enum
 @using Microsoft.AspNetCore.SignalR.Client;
 @using Blazor.Quartz.Core.Hubs
 @using Blazor.Quartz.Core.Service.App
@@ -81,6 +82,8 @@
         XField = "hours",
         YField = "数量",
         Smooth = true,
+        SeriesField = "type",
+        Color = new string[] { "#1979C9", "#D62A0D"}
     };
 
     #region SignalR相关
@@ -245,8 +248,10 @@
         hour24count = job_logs.Count();
         for (DateTime i = start_time; i <= end_time; i = i.AddHours(1))
         {
-            var count = job_logs.Where(o => Convert.ToDateTime(o.BEGIN_TIME).ToString("yyyy-MM-dd HH") == i.ToString("yyyy-MM-dd HH")).Count();
-            data.Add(new { hours = i.ToString("HH"), 数量 = count });
+            var success_count = job_logs.Where(o => Convert.ToDateTime(o.BEGIN_TIME).ToString("yyyy-MM-dd HH") == i.ToString("yyyy-MM-dd HH") && o.EXECUTION_STATUS == ExecutionStatusEnum.Success).Count();
+            var fail_count = job_logs.Where(o => Convert.ToDateTime(o.BEGIN_TIME).ToString("yyyy-MM-dd HH") == i.ToString("yyyy-MM-dd HH") && o.EXECUTION_STATUS == ExecutionStatusEnum.Failure).Count();
+            data.Add(new { hours = i.ToString("HH"), 数量 = success_count, type = "Success" });
+            data.Add(new { hours = i.ToString("HH"), 数量 = fail_count, type = "Failure" });
         }
         isshow = true;
     }
