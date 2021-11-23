@@ -1,5 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @inject NotificationService _notice
+@inject NavigationManager NavigationManager
 @using Blazor.Quartz.Core.Service.Timer.Dto
 
 <div class="sidebar">
@@ -21,6 +22,14 @@
     </div>
 </div>
 @code {
+    //protected override async Task OnInitializedAsync()
+    //{
+    //    await Task.Run(() =>
+    //    {
+    //        NavigationManager.NavigateTo("http://www.baidu.com", true);
+    //    });
+    //}
+
     private async Task OnClick()
     {
         var reqModel = new HttpResultModel() { resCode = 0, resMsg = "成功", isSuccess = true };
