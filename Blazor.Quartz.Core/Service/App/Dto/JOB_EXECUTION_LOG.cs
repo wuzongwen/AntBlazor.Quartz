@@ -60,10 +60,10 @@ namespace Blazor.Quartz.Core.Service.App.Dto
         public string REQUEST_DATA { get; set; }
 
         /// <summary>
-        /// 相应数据
+        /// 响应数据
         /// </summary>
-        [DisplayName("相应数据")]
-        [Required(ErrorMessage = "相应数据必须填写")]
+        [DisplayName("响应数据")]
+        [Required(ErrorMessage = "响应数据必须填写")]
         public string RESPONSE_DATA { get; set; }
 
         /// <summary>

@@ -41,6 +41,10 @@ namespace Blazor.Quartz.Core.Const
         /// 超时时长
         /// </summary>
         public const string TIMEOUT = "TimeOut";
+        /// <summary>
+        /// 约定返回类型
+        /// </summary>
+        public const string CovenantReturnModel = "CovenantReturnModel";
 
         public const string JobTypeEnum = "JobTypeEnum";
 

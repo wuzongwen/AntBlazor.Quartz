@@ -157,6 +157,7 @@ namespace Blazor.Quartz.Core.Service.Timer
             {
                 //检查任务是否已存在
                 var jobKey = new JobKey(entity.JobName, entity.JobGroup);
+                bool isRestart = false;
                 //操作类型为0是验证任务是否存在
                 if (actionType == 0)
                 {
@@ -166,9 +167,16 @@ namespace Blazor.Quartz.Core.Service.Timer
                         result.Msg = "任务已存在";
                         return result;
                     }
+                    isRestart = true;
                 }
                 else 
                 {
+                    var appInfo = await GetJobBriefInfoAsync(jobKey);
+                    if (appInfo.TriggerState == TriggerState.Normal || appInfo.TriggerState == TriggerState.Blocked) 
+                    {
+                        //需要重启
+                        isRestart = true;
+                    }
                     runNumber = await GetRunNumberAsync(jobKey);
                     await StopOrDelScheduleJobAsync(entity.JobGroup, entity.JobName, true, true);
                 }
@@ -191,6 +199,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                     httpDir.Add(QuartzConstant.REQUESTPARAMETERS, entity.RequestParameters);
                     httpDir.Add(QuartzConstant.REQUESTTYPE, ((int)entity.RequestType).ToString());
                     httpDir.Add(QuartzConstant.TIMEOUT, entity.TimeOut.ToString());
+                    httpDir.Add(QuartzConstant.CovenantReturnModel, entity.CovenantReturnModel.ToString());
                 }
 
                 // 定义这个工作，并将其绑定到我们的IJob实现类                
@@ -213,6 +222,13 @@ namespace Blazor.Quartz.Core.Service.Timer
 
                 // 告诉Quartz使用我们的触发器来安排作业
                 await scheduler.ScheduleJob(job, trigger);
+
+                //任务需要暂停
+                if (!isRestart) 
+                {
+                    await scheduler.PauseJob(jobKey);
+                }
+
                 result.Code = 200;
 
                 if (actionType == 0) 
@@ -355,8 +371,12 @@ namespace Blazor.Quartz.Core.Service.Timer
             var TimeOut = jobDetail.JobDataMap.GetString(QuartzConstant.TIMEOUT);
             if (!string.IsNullOrEmpty(TimeOut)) 
             {
-                //entity.TimeOut = jobDetail.JobDataMap.GetIntValueFromString(QuartzConstant.TIMEOUT);
                 entity.TimeOut = Convert.ToInt32(TimeOut);
+            }
+            var CovenantReturnModel= jobDetail.JobDataMap.GetString(QuartzConstant.CovenantReturnModel);
+            if (!string.IsNullOrEmpty(CovenantReturnModel))
+            {
+                entity.CovenantReturnModel = Convert.ToBoolean(CovenantReturnModel);
             }
             entity.Cron = (triggers as CronTriggerImpl)?.CronExpressionString;
             entity.RunTimes = (triggers as SimpleTriggerImpl)?.RepeatCount;
@@ -608,6 +628,32 @@ namespace Blazor.Quartz.Core.Service.Timer
                 o.ErrorNumber = alllog.Count(p => p.JOB_GROUP == o.GroupName && p.JOB_NAME == o.Name && p.EXECUTION_STATUS == ExecutionStatusEnum.Failure);
             });
             return jobList;
+        }
+
+        /// <summary>
+        /// 获取Job信息
+        /// </summary>
+        /// <param name="jobKey"></param>
+        /// <returns></returns>
+        public async Task<JobBriefInfo> GetJobBriefInfoAsync(JobKey jobKey) 
+        {
+            JobBriefInfo jobInfo = new JobBriefInfo();
+            var jobDetail = await scheduler.GetJobDetail(jobKey);
+            var triggersList = await scheduler.GetTriggersOfJob(jobKey);
+            var triggers = triggersList.AsEnumerable().FirstOrDefault();
+
+            jobInfo = new JobBriefInfo()
+            {
+                Name = jobKey.Name,
+                GroupName = jobKey.Group,
+                LastErrMsg = jobDetail.JobDataMap.GetString(QuartzConstant.EXCEPTION),
+                TriggerState = await scheduler.GetTriggerState(triggers.Key),
+                PreviousFireTime = triggers.GetPreviousFireTimeUtc()?.LocalDateTime,
+                NextFireTime = triggers.GetNextFireTimeUtc()?.LocalDateTime,
+                RunNumber = jobDetail.JobDataMap.GetLong(QuartzConstant.RUNNUMBER)
+            };
+
+            return jobInfo;
         }
 
         /// <summary>

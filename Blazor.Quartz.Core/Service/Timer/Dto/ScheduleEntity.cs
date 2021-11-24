@@ -57,6 +57,10 @@ namespace Blazor.Quartz.Core.Service.Timer.Dto
         /// 描述
         /// </summary>
         public string Description { get; set; }
+        /// <summary>
+        /// 约定返回模型
+        /// </summary>
+        public bool CovenantReturnModel { get; set; }
 
         #region Url
         /// <summary>

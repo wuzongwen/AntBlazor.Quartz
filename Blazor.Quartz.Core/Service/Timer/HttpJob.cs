@@ -36,12 +36,15 @@ namespace Blazor.Quartz.Core.Service.Timer
             var headersString = context.JobDetail.JobDataMap.GetString(QuartzConstant.HEADERS);
             var headers = headersString != null ? JsonConvert.DeserializeObject<Dictionary<string, string>>(headersString?.Trim()) : null;
             var requestType = (RequestTypeEnum)int.Parse(context.JobDetail.JobDataMap.GetString(QuartzConstant.REQUESTTYPE));
-            var timeOut = 30;
-            var TimeOut = context.JobDetail.JobDataMap.GetString(QuartzConstant.TIMEOUT);
-            if (!string.IsNullOrEmpty(TimeOut))
+            var TimeOut = 30;
+            if (!string.IsNullOrEmpty(context.JobDetail.JobDataMap.GetString(QuartzConstant.TIMEOUT)))
             {
-                //entity.TimeOut = jobDetail.JobDataMap.GetIntValueFromString(QuartzConstant.TIMEOUT);
-                timeOut = Convert.ToInt32(TimeOut);
+                TimeOut = context.JobDetail.JobDataMap.GetIntValueFromString(QuartzConstant.TIMEOUT);
+            }
+            var CovenantReturnModel = false;
+            if (!string.IsNullOrEmpty(context.JobDetail.JobDataMap.GetString(QuartzConstant.CovenantReturnModel))) 
+            {
+                CovenantReturnModel = context.JobDetail.JobDataMap.GetBooleanValueFromString(QuartzConstant.CovenantReturnModel);
             }
 
             LogInfo.Url = requestUrl;
@@ -60,11 +63,11 @@ namespace Blazor.Quartz.Core.Service.Timer
                     //response = await http.GetAsync(requestUrl, headers);
                     if (headers != null) 
                     {
-                        flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(timeOut).GetAsync();
+                        flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(TimeOut).GetAsync();
                     }
                     else 
                     {
-                        flurlResponse = await requestUrl.WithTimeout(timeOut).GetAsync();
+                        flurlResponse = await requestUrl.WithTimeout(TimeOut).GetAsync();
                     }
                     response = flurlResponse.ResponseMessage;
                     break;
@@ -74,22 +77,22 @@ namespace Blazor.Quartz.Core.Service.Timer
                     {
                         if (requestParameters != null)
                         {
-                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(timeOut).PostStringAsync(requestParameters);
+                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(TimeOut).PostStringAsync(requestParameters);
                         }
                         else
                         {
-                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(timeOut).PostAsync();
+                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(TimeOut).PostAsync();
                         }
                     }
                     else 
                     {
                         if (requestParameters != null)
                         {
-                            flurlResponse = await requestUrl.WithTimeout(timeOut).PostStringAsync(requestParameters);
+                            flurlResponse = await requestUrl.WithTimeout(TimeOut).PostStringAsync(requestParameters);
                         }
                         else 
                         {
-                            flurlResponse = await requestUrl.WithTimeout(timeOut).PostAsync();
+                            flurlResponse = await requestUrl.WithTimeout(TimeOut).PostAsync();
                         }
                     }
                     response = flurlResponse.ResponseMessage;
@@ -100,22 +103,22 @@ namespace Blazor.Quartz.Core.Service.Timer
                     {
                         if (requestParameters != null)
                         {
-                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(timeOut).PutStringAsync(requestParameters);
+                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(TimeOut).PutStringAsync(requestParameters);
                         }
                         else 
                         {
-                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(timeOut).PutAsync();
+                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(TimeOut).PutAsync();
                         }
                     }
                     else
                     {
                         if (requestParameters != null)
                         {
-                            flurlResponse = await requestUrl.WithTimeout(timeOut).PutStringAsync(requestParameters);
+                            flurlResponse = await requestUrl.WithTimeout(TimeOut).PutStringAsync(requestParameters);
                         }
                         else
                         {
-                            flurlResponse = await requestUrl.WithTimeout(timeOut).PutAsync();
+                            flurlResponse = await requestUrl.WithTimeout(TimeOut).PutAsync();
                         }
                     }
                     response = flurlResponse.ResponseMessage;
@@ -124,11 +127,11 @@ namespace Blazor.Quartz.Core.Service.Timer
                     //response = await http.DeleteAsync(requestUrl, headers);
                     if (headers != null)
                     {
-                        flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(timeOut).DeleteAsync();
+                        flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(TimeOut).DeleteAsync();
                     }
                     else
                     {
-                        flurlResponse = await requestUrl.WithTimeout(timeOut).DeleteAsync();
+                        flurlResponse = await requestUrl.WithTimeout(TimeOut).DeleteAsync();
                     }
                     response = flurlResponse.ResponseMessage;
                     break;
@@ -149,14 +152,21 @@ namespace Blazor.Quartz.Core.Service.Timer
             {
                 try
                 {
-                    //这里需要和请求方约定好返回结果约定为HttpResultModel模型
-                    var httpResult = JsonConvert.DeserializeObject<HttpResultModel>(HttpUtility.HtmlDecode(result));
-                    if (!httpResult.isSuccess && httpResult.resCode != 0)
+                    if (CovenantReturnModel)
                     {
-                        LogInfo.Status = ExecutionStatusEnum.Failure;
-                        LogInfo.ErrorMsg = $"<span class='error'>{httpResult.resMsg}</span>";
-                        await ErrorAsync(LogInfo.JobName, new Exception(httpResult.resMsg), JsonConvert.SerializeObject(LogInfo));
-                        context.JobDetail.JobDataMap[QuartzConstant.EXCEPTION] = $"<div class='err-time'>{LogInfo.BeginTime}</div>{JsonConvert.SerializeObject(LogInfo)}";
+                        //这里需要和请求方约定好返回结果约定为HttpResultModel模型
+                        var httpResult = JsonConvert.DeserializeObject<HttpResultModel>(HttpUtility.HtmlDecode(result));
+                        if (!httpResult.isSuccess && httpResult.resCode != 0)
+                        {
+                            LogInfo.Status = ExecutionStatusEnum.Failure;
+                            LogInfo.ErrorMsg = $"<span class='error'>{httpResult.resMsg}</span>";
+                            await ErrorAsync(LogInfo.JobName, new Exception(httpResult.resMsg), JsonConvert.SerializeObject(LogInfo));
+                            context.JobDetail.JobDataMap[QuartzConstant.EXCEPTION] = $"<div class='err-time'>{LogInfo.BeginTime}</div>{JsonConvert.SerializeObject(LogInfo)}";
+                        }
+                        else
+                        {
+                            LogInfo.Status = ExecutionStatusEnum.Success;
+                        }
                     }
                     else 
                     {
@@ -165,6 +175,13 @@ namespace Blazor.Quartz.Core.Service.Timer
                 }
                 catch (Exception ex)
                 {
+                    if (CovenantReturnModel && ex.Message.Contains("Unexpected character encountered while parsing value")) 
+                    {
+                        var httpResult = HttpUtility.HtmlDecode(result);
+                        LogInfo.Status = ExecutionStatusEnum.Failure;
+                        await ErrorAsync(LogInfo.JobName, new Exception($"未按约定模型返回响应数据,当前响应数据:{httpResult}"), JsonConvert.SerializeObject(LogInfo));
+                        throw new Exception($"未按约定模型返回响应数据,当前响应数据:{httpResult}");
+                    }
                     LogInfo.Status = ExecutionStatusEnum.Failure;
                     await ErrorAsync(LogInfo.JobName, ex, JsonConvert.SerializeObject(LogInfo));
                     throw new Exception(ex.Message);

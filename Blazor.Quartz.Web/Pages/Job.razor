@@ -252,13 +252,13 @@
                 //Nav.NavigateTo("job");
 
                 //重载数据
-                var data = await scheduler.GetAllJobBriefInfoAsync_New();
-                    jobItems = new List<JobBriefInfo>();
-                    if (data.Count > 0)
-                    {
-                        jobItems = data;
-                    }
-
+                //var data = await scheduler.GetAllJobBriefInfoAsync_New();
+                //    jobItems = new List<JobBriefInfo>();
+                //    if (data.Count > 0)
+                //    {
+                //        jobItems = data;
+                //    }
+                  await LoadTable();
                 ////重载页面
                 //await OnInitializedAsync();
 
