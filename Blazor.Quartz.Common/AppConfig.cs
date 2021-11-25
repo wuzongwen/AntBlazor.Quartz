@@ -19,6 +19,7 @@ namespace Blazor.Quartz.Common
         public static string DisplayName => ConfigurationManager.GetTryConfig("SysConfig:DisplayName");
         public static string Description => ConfigurationManager.GetTryConfig("SysConfig:Description");
         public static string RunLogStorageDays => ConfigurationManager.GetTryConfig("SysConfig:RunLogStorageDays");
+        public static string AutoClearnLog => ConfigurationManager.GetTryConfig("SysConfig:AutoClearnLog");
         public static string CheckJobCron => ConfigurationManager.GetTryConfig("CronConfig:CheckJobCron");
         public static string ReportJobCron => ConfigurationManager.GetTryConfig("CronConfig:ReportJobCron");
     }

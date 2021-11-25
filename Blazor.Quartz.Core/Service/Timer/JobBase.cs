@@ -1,4 +1,5 @@
-﻿using Blazor.Quartz.Common.DingTalkRobot.Robot;
+﻿using Blazor.Quartz.Common;
+using Blazor.Quartz.Common.DingTalkRobot.Robot;
 using Blazor.Quartz.Core.Const;
 using Blazor.Quartz.Core.Dapper;
 using Blazor.Quartz.Core.Service.App.Dto;
@@ -99,6 +100,21 @@ namespace Blazor.Quartz.Core.Service.Timer
                             ,[RESPONSE_DATA]
                             ,[BEGIN_TIME]
                             ) VALUES(@JOB_NAME,@JOB_GROUP,@EXECUTION_STATUS,@REQUEST_URL,@REQUEST_TYPE,@HEADERS,@REQUEST_DATA,@RESPONSE_DATA,@BEGIN_TIME)", model);
+
+                #region 清理数据
+                if (AppConfig.AutoClearnLog.ToLower() == "true")
+                {
+                    //清理数据
+                    var RunLogStorageDays = AppConfig.RunLogStorageDays;
+                    if (RunLogStorageDays == null)
+                    {
+                        //默认保留7天
+                        RunLogStorageDays = "7";
+                    }
+                    string startTime = DateTime.Now.AddDays(-Convert.ToInt32(RunLogStorageDays)).Date.ToString("yyyy-MM-dd");
+                    await DbContext.ExecuteAsync($@"DELETE FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE BEGIN_TIME<@START_TIME", new { START_TIME = startTime });
+                }
+                #endregion
             }
         }
 
