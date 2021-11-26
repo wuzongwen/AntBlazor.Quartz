@@ -132,13 +132,14 @@
                 @{
                     switch (context.TriggerState)
                     {
-                        case global::Quartz.TriggerState.Paused:
-
-                            break;
-                        default:
-                            <Button OnClick="@(()=>ExecuteNow(context.GroupName,context.Name))">
+                        case global::Quartz.TriggerState.Normal:
+                        case global::Quartz.TriggerState.Error:
+                             <Button OnClick="@(()=>ExecuteNow(context.GroupName,context.Name))">
                                 立即执行
                             </Button>
+                            break;
+                        default:
+
                             break;
                     }
                 }
