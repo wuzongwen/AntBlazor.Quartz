@@ -38,7 +38,7 @@ namespace Blazor.Quartz.Service
                     #endregion
 
                     #region 每日报表
-                    var sql = $"SELECT * FROM {QuartzConstant.TablePrefix}JOB_DETAILS WHERE 1=1";
+                    var sql = $"SELECT * FROM {QuartzConstant.TablePrefix}JOB_DETAILS WHERE 1=1 ORDER BY JOB_GROUP,JOB_NAME ASC";
                     var dynamicParams = new DynamicParameters();
                     var jobRes = await DbContext.QueryAsync<JOB_DETAILS>(sql, dynamicParams);
                     var jobList = jobRes.OrderBy(o => o.JOB_GROUP).ToList();
