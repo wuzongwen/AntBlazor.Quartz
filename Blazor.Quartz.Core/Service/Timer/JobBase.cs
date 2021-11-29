@@ -22,7 +22,7 @@ namespace Blazor.Quartz.Core.Service.Timer
     [PersistJobDataAfterExecution]
     public abstract class JobBase<T> where T : LogModel, new()
     {
-        protected readonly int warnTime = 20;//接口请求超过多少秒记录警告日志 
+        protected readonly int warnTime = AppConfig.WarnTime;//接口请求超过多少秒记录警告日志 
         protected Stopwatch stopwatch = new Stopwatch();
         protected T LogInfo { get; private set; }
 

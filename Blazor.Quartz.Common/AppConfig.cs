@@ -22,5 +22,6 @@ namespace Blazor.Quartz.Common
         public static string AutoClearnLog => ConfigurationManager.GetTryConfig("SysConfig:AutoClearnLog");
         public static string CheckJobCron => ConfigurationManager.GetTryConfig("CronConfig:CheckJobCron");
         public static string ReportJobCron => ConfigurationManager.GetTryConfig("CronConfig:ReportJobCron");
+        public static int WarnTime => Convert.ToInt32(ConfigurationManager.GetTryConfig("SysConfig:WarnTime", "30"));
     }
 }
