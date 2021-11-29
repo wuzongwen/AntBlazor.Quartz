@@ -26,15 +26,13 @@ namespace Blazor.Quartz.Service
                 try
                 {
                     #region 清理数据
-                    //清理数据
-                    var RunLogStorageDays = AppConfig.RunLogStorageDays;
-                    if (RunLogStorageDays == null)
+                    if (AppConfig.AutoClearnLog) 
                     {
-                        //默认保留7天
-                        RunLogStorageDays = "7";
+                        //清理数据
+                        var RunLogStorageDays = AppConfig.RunLogStorageDays;
+                        string startTime = DateTime.Now.AddDays(-Convert.ToInt32(RunLogStorageDays)).Date.ToString("yyyy-MM-dd");
+                        await DbContext.ExecuteAsync($@"DELETE FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE BEGIN_TIME<@START_TIME", new { START_TIME = startTime });
                     }
-                    string startTime = DateTime.Now.AddDays(-Convert.ToInt32(RunLogStorageDays)).Date.ToString("yyyy-MM-dd");
-                    await DbContext.ExecuteAsync($@"DELETE FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE BEGIN_TIME<@START_TIME", new { START_TIME = startTime });
                     #endregion
 
                     #region 每日报表
