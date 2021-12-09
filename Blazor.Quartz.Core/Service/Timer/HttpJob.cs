@@ -137,9 +137,8 @@ namespace Blazor.Quartz.Core.Service.Timer
                     break;
             }
             var result = HttpUtility.HtmlEncode(await response.Content.ReadAsStringAsync());
-            LogInfo.Result = $"<span class='result'>{result.MaxLeft(1000)}</span>";
-
-            LogInfo.Res_Data = HttpUtility.HtmlDecode(result);
+            LogInfo.Req_Data = requestParameters;
+            LogInfo.Result = HttpUtility.HtmlDecode(result);
 
             if (!response.IsSuccessStatusCode)
             {

@@ -59,9 +59,9 @@ namespace Blazor.Quartz.Core.Service.Timer.Dto
         public int TimeOut { get; set; }
 
         /// <summary>
-        /// 响应数据
+        /// 请求数据
         /// </summary>
-        public string Res_Data { get; set; }
+        public string Req_Data { get; set; }
 
         /// <summary>
         /// 状态

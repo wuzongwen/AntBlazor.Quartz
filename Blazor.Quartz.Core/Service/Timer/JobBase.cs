@@ -54,7 +54,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                 LogInfo.JobName = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
 
                 await NextExecute(context);
-                model.RESPONSE_DATA = LogInfo.Res_Data;
+                model.RESPONSE_DATA = LogInfo.Result;
             }
             catch (Exception ex)
             {
@@ -87,7 +87,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                 model.REQUEST_URL = LogInfo.Req_Url;
                 model.REQUEST_TYPE = LogInfo.Req_Type;
                 model.HEADERS = LogInfo.Headers;
-                model.REQUEST_DATA = LogInfo.Result;
+                model.REQUEST_DATA = LogInfo.Req_Data;
                 model.BEGIN_TIME = LogInfo.BeginTime;
                 model.EXECUTION_STATUS = LogInfo.Status;
                 await DbContext.ExecuteAsync($@"INSERT INTO {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG ([JOB_NAME]
