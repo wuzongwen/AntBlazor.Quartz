@@ -58,26 +58,28 @@ namespace Blazor.Quartz.Service
                                  )
                                 .CreateLogger();
 
-            HostFactory.Run(config =>
-            {
-                config.Service<StartService>();
-                config.RunAsLocalSystem();
-                config.EnableServiceRecovery(r => r.RestartService(TimeSpan.FromSeconds(10)));
-                config.SetDescription(AppConfig.Description);
-                config.SetServiceName(AppConfig.ServiceName);
-                config.SetDisplayName(AppConfig.DisplayName);
-                config.StartAutomatically();
-                config.EnablePauseAndContinue();//支持暂停和继续
+            var rc = HostFactory.Run(config =>
+              {
+                  config.Service<StartService>();
+                  config.RunAsLocalSystem();
+                  config.EnableServiceRecovery(r => r.RestartService(TimeSpan.FromSeconds(10)));
+                  config.SetDescription(AppConfig.Description);
+                  config.SetServiceName(AppConfig.ServiceName);
+                  config.SetDisplayName(AppConfig.DisplayName);
+                  config.StartAutomatically();
+                  config.EnablePauseAndContinue();//支持暂停和继续
                 config.EnableShutdown();//支持停止
-                //异常处理
+                                        //异常处理
                 config.OnException(ex =>
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"异常,信息详情:{ex.Message}");
-                    Log.Error($"异常,信息详情:{ex.Message}");
-                    Console.ForegroundColor = ConsoleColor.Gray;
-                });
-            });
+                  {
+                      Console.ForegroundColor = ConsoleColor.Red;
+                      Console.WriteLine($"异常,信息详情:{ex.Message}");
+                      Log.Error($"异常,信息详情:{ex.Message}");
+                      Console.ForegroundColor = ConsoleColor.Gray;
+                  });
+              });
+            var exitCode = (int)Convert.ChangeType(rc, rc.GetTypeCode());
+            Environment.ExitCode = exitCode;
         }
     }
 }

@@ -17,6 +17,7 @@ using Talk.Extensions;
 using Talk.Extensions.Helper;
 using Flurl.Http;
 using Blazor.Quartz.Common.DingTalkRobot.Robot;
+using System.Text.RegularExpressions;
 
 namespace Blazor.Quartz.Core.Service.Timer
 {
@@ -88,7 +89,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                     {
                         if (requestParameters != null)
                         {
-                            flurlResponse = await requestUrl.WithTimeout(TimeOut).PostStringAsync(requestParameters);
+                            flurlResponse = await requestUrl.WithTimeout(TimeOut).PostJsonAsync(requestParameters);
                         }
                         else 
                         {
@@ -136,7 +137,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                     response = flurlResponse.ResponseMessage;
                     break;
             }
-            var result = HttpUtility.HtmlEncode(await response.Content.ReadAsStringAsync());
+            var result = HttpUtility.HtmlEncode(Regex.Unescape(await response.Content.ReadAsStringAsync()));
             LogInfo.Req_Data = requestParameters;
             LogInfo.Result = HttpUtility.HtmlDecode(result);
 
