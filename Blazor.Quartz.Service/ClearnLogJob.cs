@@ -32,6 +32,7 @@ namespace Blazor.Quartz.Service
                         var RunLogStorageDays = AppConfig.RunLogStorageDays;
                         string startTime = DateTime.Now.AddDays(-Convert.ToInt32(RunLogStorageDays)).Date.ToString("yyyy-MM-dd");
                         await DbContext.ExecuteAsync($@"DELETE FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE BEGIN_TIME<@START_TIME", new { START_TIME = startTime });
+                        Console.ForegroundColor = ConsoleColor.Green;
                         Console.WriteLine($"日志清理成功");
                     }
                     #endregion
