@@ -27,6 +27,8 @@ namespace Blazor.Quartz.Service
             {
                 // 开启调度
                 ISchedulerFactory sf = new StdSchedulerFactory();
+
+                //检查心跳任务
                 IJobDetail job = JobBuilder.Create<CheckJob>().Build();
                 // 服务启动时执行一次
                 // ITrigger triggerNow = TriggerBuilder.Create().StartNow().Build();
@@ -34,9 +36,9 @@ namespace Blazor.Quartz.Service
                     .StartNow()
                     .WithCronSchedule(AppConfig.CheckJobCron)
                     .Build();
-
                 scheduler.ScheduleJob(job, trigger);
 
+                //每日报表任务
                 IJobDetail job2 = JobBuilder.Create<ReportJob>().Build();
                 // 服务启动时执行一次
                 // ITrigger triggerNow = TriggerBuilder.Create().StartNow().Build();
@@ -44,8 +46,18 @@ namespace Blazor.Quartz.Service
                     .StartNow()
                     .WithCronSchedule(AppConfig.ReportJobCron)
                     .Build();
-
                 scheduler.ScheduleJob(job2, trigger2);
+
+                //清理日志任务
+                IJobDetail job3 = JobBuilder.Create<ClearnLogJob>().Build();
+                // 服务启动时执行一次
+                // ITrigger triggerNow = TriggerBuilder.Create().StartNow().Build();
+                ITrigger trigger3 = TriggerBuilder.Create()
+                    .StartNow()
+                    .WithCronSchedule(AppConfig.ClearnLogJobCron)
+                    .Build();
+                scheduler.ScheduleJob(job3, trigger3);
+
                 scheduler.Start();
             }
             catch (Exception ex)
