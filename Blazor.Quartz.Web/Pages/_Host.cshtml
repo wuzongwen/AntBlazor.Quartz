@@ -31,13 +31,24 @@
     <script src="_content/AntDesign/js/ant-design-blazor.js"></script>
     <script src="_content/AntDesign.Charts/g2plot.js"></script>
     <script src="_content/AntDesign.Charts/ant-design-charts-blazor.js"></script>
-    <environment include="Production">
-        <script>
-            window.Blazor.defaultReconnectionHandler.onConnectionDown = function () {
-                console.log('reloading')
-                window.location.reload();
-            };
-        </script>
-    </environment>
+    <script>
+        window.Blazor.defaultReconnectionHandler.onConnectionDown = function () {
+            console.log('reloading')
+            window.location.reload();
+        };
+        // 等待直到出现“重新加载”按钮
+        new MutationObserver((mutations, observer) => {
+            if (document.querySelector('#components-reconnect-modal h5 a')) {
+                // 现在，每隔10秒，查看服务器是否返回，如果返回，则重新加载
+                async function attemptReload() {
+                    await fetch(''); // 检查服务器是否真的返回
+                    location.reload();
+                }
+                observer.disconnect();
+                attemptReload();
+                setInterval(attemptReload, 10000);
+            }
+        }).observe(document.body, { childList: true, subtree: true });
+    </script>
 </body>
 </html>
