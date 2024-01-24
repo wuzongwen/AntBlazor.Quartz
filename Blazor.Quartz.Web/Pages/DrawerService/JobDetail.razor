@@ -4,8 +4,7 @@
 @using Blazor.Quartz.Core.Service.Timer.Enum
 @using Blazor.Quartz.Core.Service.Timer
 @using Blazor.Quartz.Core.Service.App.Dto
-@using System.ComponentModel.DataAnnotations
-@inherits DrawerTemplate<string, string>
+@inherits FeedbackComponent<string, string>
 @inject MessageService _message
 @inject ProtectedLocalStorage localstorage
 @inject SchedulerCenter scheduler
@@ -19,15 +18,14 @@
         @if (actionType == 1)
         {
             <FormItem Label="所属应用">
-                <Select Disabled DataSource="@appInfoList"
-                    OnSelectedItemChanged="OnSelectedItemChangedHandler"
-                    @bind-Value="@context.JobGroup"
-                    ValueName="@nameof(AppInfo.JOB_GROUP_NAME)"
-                    LabelName="@nameof(AppInfo.JOB_GROUP_NAME)"
-                    Placeholder="请选项任务所属应用"
-                    DefaultValue="@context.JobGroup"
-                    DefaultActiveFirstItem="false">
-                </Select>
+               <Select @bind-Value="@context.JobGroup" TItem="AppInfo"
+                       TItemValue="string"
+                       DataSource="@appInfoList"
+                       LabelName="@nameof(AppInfo.JOB_GROUP_NAME)"
+                       ValueName="@nameof(AppInfo.JOB_GROUP_NAME)"
+                       DefaultActiveFirstOption="true"
+                       OnSelectedItemChanged="OnSelectedItemChangedHandler">
+               </Select>
             </FormItem>
             <FormItem Label="任务名称">
                 <Input Placeholder="请输入任务名称" Disabled @bind-Value="@context.JobName" OnChange="DataSave" TValue="string" />
@@ -36,14 +34,13 @@
         else
         {
             <FormItem Label="所属应用">
-                <Select DataSource="@appInfoList"
-                    OnSelectedItemChanged="OnSelectedItemChangedHandler"
-                    @bind-Value="@context.JobGroup"
-                    ValueName="@nameof(AppInfo.JOB_GROUP_NAME)"
-                    LabelName="@nameof(AppInfo.JOB_GROUP_NAME)"
-                    Placeholder="请选择任务所属应用"
-                    DefaultValue="@context.JobGroup"
-                    DefaultActiveFirstItem="false">
+                <Select @bind-Value="@context.JobGroup" TItem="AppInfo"
+                        TItemValue="string"
+                        DataSource="@appInfoList"
+                        LabelName="@nameof(AppInfo.JOB_GROUP_NAME)"
+                        ValueName="@nameof(AppInfo.JOB_GROUP_NAME)"
+                        DefaultActiveFirstOption="true"
+                        OnSelectedItemChanged="OnSelectedItemChangedHandler">
                 </Select>
             </FormItem>
             <FormItem Label="任务名称">
@@ -98,7 +95,7 @@
             <AntDesign.InputNumber @bind-Value="@model.TimeOut" Placeholder="默认30秒" OnChange="DataSave" TValue="int?" Min="1" Max="99999"></AntDesign.InputNumber>
         </FormItem>
         <FormItem Label="约定返回模型">
-        <Switch @bind-Value="@context.CovenantReturnModel" />
+            <Switch @bind-Value="@context.CovenantReturnModel" />
         </FormItem>
         <FormItem Label="请求头">
             <Input Placeholder="格式为Json键值对如{'authorization':'xxxxxx'}" @bind-Value="@context.Headers" OnChange="DataSave" TValue="string" />
@@ -179,23 +176,28 @@
             model.RequestParameters = data.RequestParameters;
             model.Description = data.Description;
         }
-
-        //获取应用列表
-        var appInfoListRes = await appservice.GetList(new QueryModel());
-        appInfoList = appInfoListRes.Data;
-        if (appInfoList.Count() < 1)
-        {
-            OnClose();
-            await _message.Error("请先添加应用");
-        }
-
         base.OnInitialized();
     }
 
+    protected override void OnInitialized()
+    {
+        Task.Run(async() =>
+        {
+            //获取应用列表
+            var appInfoListRes = await appservice.GetList(new QueryModel());
+            appInfoList = appInfoListRes.Data;
+            if (appInfoList.Count() < 1)
+            {
+                OnClose();
+                await _message.Error("请先添加应用");
+            }
+        });
+    }
 
     async void OnClose()
     {
-        await this.CloseAsync(value);
+        DrawerRef<string> drawerRef = base.FeedbackRef as DrawerRef<string>;
+        await drawerRef!.CloseAsync(value);
     }
 
     //选择器事件
@@ -243,7 +245,7 @@
             await localstorage.DeleteAsync(localstorage_key);
 
             //关闭抽屉
-            await this.CloseAsync("true");
+            this.OnClose();
 
             //提示
             await _notice.Open(new NotificationConfig()
@@ -291,5 +293,10 @@
     {
         if (this.Options == null)
             await localstorage.SetAsync(localstorage_key, model);
+    }
+
+    private async Task OnSelectYear(string value)
+    {
+        DataSave();
     }
 }

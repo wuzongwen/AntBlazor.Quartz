@@ -1,0 +1,67 @@
+﻿@namespace AntDesign
+@using Blazor.Quartz.Core.Service.App
+@using Blazor.Quartz.Core.Service.App.Dto
+@using Blazor.Quartz.Core.Service.App.Enum
+@using AntDesign.TableModels
+@inherits FeedbackComponent<string, string>
+@inject IJobLogService joblogservice
+@inject MessageService _message
+<Table TItem="JOB_EXECUTION_LOG" DataSource="logItems" Loading="isLoading" Total="_total" OnChange="HandleTableChange" RemoteDataSource>
+    <ColumnDefinitions>
+        <PropertyColumn Property="c => c.REQUEST_URL" Title="请求地址"></PropertyColumn>
+        <PropertyColumn Property="c => c.RESPONSE_DATA" Ellipsis />
+        <PropertyColumn Property="c => c.EXECUTION_STATUS" Width="100">
+            @{
+                var color = "";
+                switch (context.EXECUTION_STATUS)
+                {
+                    case ExecutionStatusEnum.Success:
+                        color = "green";
+                        break;
+                    case ExecutionStatusEnum.Failure:
+                        color = "red";
+                        break;
+                    default:
+                        color = "gray";
+                        break;
+                }
+                <Tag Color="@color">@context.EXECUTION_STATUS</Tag>
+            }
+        </PropertyColumn>
+        <PropertyColumn Property="c => c.BEGIN_TIME" Width="160" />
+    </ColumnDefinitions>
+    <ExpandTemplate>
+        @context.Data.RESPONSE_DATA
+    </ExpandTemplate>
+</Table>
+@code {
+    bool isLoading = true;
+
+    int _total;
+
+    string value;
+
+    int pageSize = 10;
+
+    List<JOB_EXECUTION_LOG> logItems;
+
+    async void OnClose()
+    {
+        DrawerRef<string> drawerRef = base.FeedbackRef as DrawerRef<string>;
+        await drawerRef!.CloseAsync(value);
+    }
+
+    async Task HandleTableChange(QueryModel<JOB_EXECUTION_LOG> queryModel)
+    {
+        isLoading = true;
+
+        var querylogDto = JsonConvert.DeserializeObject<QueryLogDto>(base.Options);
+        querylogDto.page_index = queryModel.PageIndex;
+        querylogDto.page_size = queryModel.PageSize;
+        var resData = await joblogservice.GetList(querylogDto);
+        logItems = resData.data;
+        _total = resData.total;
+
+        isLoading = false;
+    }
+}

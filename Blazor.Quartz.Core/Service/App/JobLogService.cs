@@ -37,9 +37,9 @@ namespace Blazor.Quartz.Core.Service.App
         /// 获取日志
         /// </summary>
         /// <returns></returns>
-        public async Task<List<JOB_EXECUTION_LOG>> GetList(QueryLogDto query)
+        public async Task<PageRes<List<JOB_EXECUTION_LOG>>> GetList(QueryLogDto query)
         {
-            var sql = $@"SELECT [JOB_NAME]
+            string sql = @"SELECT [JOB_NAME]
                             ,[JOB_GROUP]
                             ,[EXECUTION_STATUS]
                             ,[REQUEST_URL]
@@ -47,36 +47,45 @@ namespace Blazor.Quartz.Core.Service.App
                             ,[HEADERS]
                             ,[REQUEST_DATA]
                             ,[RESPONSE_DATA]
-                            ,[BEGIN_TIME] FROM { QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE 1=1";
+                            ,[BEGIN_TIME]
+                    FROM {0}";
+            string sqlCondition = " WHERE 1=1";
             var dynamicParams = new DynamicParameters();
-            if (!string.IsNullOrEmpty(query.start_time))
-            {
-                sql += " AND BEGIN_TIME >= @START_TIME";
-                dynamicParams.Add("START_TIME", query.start_time);
-            }
-            if (!string.IsNullOrEmpty(query.end_time))
-            {
-                sql += " AND BEGIN_TIME <= @END_TIME";
-                dynamicParams.Add("END_TIME", query.end_time);
-            }
             if (!string.IsNullOrEmpty(query.group))
             {
-                sql += " AND JOB_GROUP = @JOB_GROUP";
+                sqlCondition += " AND JOB_GROUP = @JOB_GROUP";
                 dynamicParams.Add("JOB_GROUP", query.group);
             }
             if (!string.IsNullOrEmpty(query.name))
             {
-                sql += " AND JOB_NAME = @JOB_NAME";
+                sqlCondition += " AND JOB_NAME = @JOB_NAME";
                 dynamicParams.Add("JOB_NAME", query.name);
             }
             if (query.status != null) 
             {
-                sql += " AND EXECUTION_STATUS = @EXECUTION_STATUS";
+                sqlCondition += " AND EXECUTION_STATUS = @EXECUTION_STATUS";
                 dynamicParams.Add("EXECUTION_STATUS", query.status);
             }
-            sql += " ORDER BY BEGIN_TIME DESC";
-            var res = await DbContext.QueryAsync<JOB_EXECUTION_LOG>(sql, dynamicParams);
-            return res.ToList();
+            var dataCount = await DbContext.QueryFirstOrDefaultAsync<int>($"SELECT COUNT(*)FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG {sqlCondition}", dynamicParams);
+            dynamicParams.Add("StartRow", (query.page_index - 1) * query.page_size + 1);
+            dynamicParams.Add("EndRow", query.page_index * query.page_size);
+            var dataPageListSql = string.Format(sql, $@"(
+                    SELECT [JOB_NAME]
+                            ,[JOB_GROUP]
+                            ,[EXECUTION_STATUS]
+                            ,[REQUEST_URL]
+                            ,[REQUEST_TYPE]
+                            ,[HEADERS]
+                            ,[REQUEST_DATA]
+                            ,[RESPONSE_DATA]
+                            ,[BEGIN_TIME], ROW_NUMBER() OVER (ORDER BY BEGIN_TIME DESC) AS RowNum
+                    FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG {sqlCondition}
+                ) AS Temp WHERE RowNum BETWEEN @StartRow AND @EndRow");
+            var res = await DbContext.QueryAsync<JOB_EXECUTION_LOG>(dataPageListSql, dynamicParams);
+            PageRes<List<JOB_EXECUTION_LOG>> pageRes = new PageRes<List<JOB_EXECUTION_LOG>>();
+            pageRes.data = res.ToList();
+            pageRes.total = dataCount;
+            return pageRes;
         }
     }
 
@@ -93,6 +102,6 @@ namespace Blazor.Quartz.Core.Service.App
         /// 获取日志
         /// </summary>
         /// <returns></returns>
-        Task<List<JOB_EXECUTION_LOG>> GetList(QueryLogDto query);
+        Task<PageRes<List<JOB_EXECUTION_LOG>>> GetList(QueryLogDto query);
     }
 }

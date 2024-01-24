@@ -9,10 +9,9 @@
 @using Blazor.Quartz.Core.Service.Timer
 @using Blazor.Quartz.Common
 @using System.Linq
-@*@inject HttpClient Http*@
 @inject NotificationService _notice
 @inject IAppService appservice
-@inject IJobLogService joblogservice
+@inject IJobService jobservice
 @inject SchedulerCenter scheduler
 @inject IConfiguration Configuration
 
@@ -83,7 +82,7 @@
         YField = "数量",
         Smooth = true,
         SeriesField = "type",
-        Color = new string[] { "#1979C9", "#D62A0D"}
+        Color = new string[] { "#1979C9", "#D62A0D" }
     };
 
     #region SignalR相关
@@ -237,21 +236,17 @@
         var queryDto = new QueryModel();
         var applist = await appservice.GetList(queryDto);
         app_count = applist.Data.Count();
-        var joblist = await scheduler.GetAllJobBriefInfoAsync_New();
+        var joblist = await jobservice.GetRunningJobList();
         job_count = joblist.Count();
         var querylogDto = new QueryLogDto();
         var start_time = Now.AddHours(-12).Date.AddHours(Now.AddHours(-12).Hour);
         var end_time = Now.Date.AddHours(Now.Hour + 1).AddMilliseconds(-1);
-        querylogDto.start_time = start_time.ToString("yyyy-MM-dd HH:mm:ss");
-        querylogDto.end_time = end_time.ToString("yyyy-MM-dd HH:mm:ss");
-        var job_logs = await joblogservice.GetList(querylogDto);
-        hour24count = job_logs.Count();
+        var jobRunningState = await jobservice.GetJobRunningState();
+        hour24count = jobRunningState.Sum(o => o.Count);
         for (DateTime i = start_time; i <= end_time; i = i.AddHours(1))
         {
-            var success_count = job_logs.Where(o => Convert.ToDateTime(o.BEGIN_TIME).ToString("yyyy-MM-dd HH") == i.ToString("yyyy-MM-dd HH") && o.EXECUTION_STATUS == ExecutionStatusEnum.Success).Count();
-            var fail_count = job_logs.Where(o => Convert.ToDateTime(o.BEGIN_TIME).ToString("yyyy-MM-dd HH") == i.ToString("yyyy-MM-dd HH") && o.EXECUTION_STATUS == ExecutionStatusEnum.Failure).Count();
-            data.Add(new { hours = i.ToString("HH"), 数量 = success_count, type = "Success" });
-            data.Add(new { hours = i.ToString("HH"), 数量 = fail_count, type = "Failure" });
+            data.Add(new { hours = i.ToString("HH"), 数量 = jobRunningState.Where(o => o.HourOfDay == i.Hour).FirstOrDefault()?.CountStatus1, type = "Success" });
+            data.Add(new { hours = i.ToString("HH"), 数量 = jobRunningState.Where(o => o.HourOfDay == i.Hour).FirstOrDefault()?.CountStatus0, type = "Failure" });
         }
         isshow = true;
     }

@@ -1,4 +1,5 @@
-﻿using Quartz;
+﻿using Google.Protobuf.WellKnownTypes;
+using Quartz;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -35,16 +36,54 @@ namespace Blazor.Quartz.Core.Service.Timer.Dto
         public string GroupName { get; set; }
 
         /// <summary>
+        /// 下次执行时间(时间戳)
+        /// </summary>
+        [DisplayName("下次执行时间")]
+        public long? Next_Fire_Time { get; set; }
+
+        /// <summary>
         /// 下次执行时间
         /// </summary>
         [DisplayName("下次执行时间")]
-        public DateTime? NextFireTime { get; set; }
+        public DateTime? NextFireTime {
+            get
+            {
+                if (Next_Fire_Time != null)
+                {
+                    return new DateTime(Next_Fire_Time.Value, DateTimeKind.Utc).ToLocalTime();
+                }
+                return null;
+            }
+            set
+            {
+
+            }
+        }
+
+        /// <summary>
+        /// 上次执行时间(时间戳)
+        /// </summary>
+        [DisplayName("上次执行时间")]
+        public long? Prev_Fire_Time { get; set; }
 
         /// <summary>
         /// 上次执行时间
         /// </summary>
         [DisplayName("上次执行时间")]
-        public DateTime? PreviousFireTime { get; set; }
+        public DateTime? PreviousFireTime {
+            get
+            {
+                if (Prev_Fire_Time != null)
+                {
+                    return new DateTime(Prev_Fire_Time.Value, DateTimeKind.Utc).ToLocalTime();
+                }
+                return null;
+            }
+            set 
+            {
+            
+            }
+        }
 
         /// <summary>
         /// 上次执行的异常信息
@@ -57,6 +96,11 @@ namespace Blazor.Quartz.Core.Service.Timer.Dto
         public TriggerState TriggerState { get; set; }
 
         /// <summary>
+        /// 任务状态
+        /// </summary>
+        public string Trigger_State { get; set; }
+
+        /// <summary>
         /// 显示状态
         /// </summary>
         [DisplayName("状态")]
@@ -65,24 +109,30 @@ namespace Blazor.Quartz.Core.Service.Timer.Dto
             get
             {
                 var state = string.Empty;
-                switch (TriggerState)
+                switch (Trigger_State)
                 {
-                    case TriggerState.Normal:
+                    case "NORMAL":
+                    case "WAITING":
+                    case "ACQUIRED":
+                    case "EXECUTING":
                         state = "正常";
                         break;
-                    case TriggerState.Paused:
+                    case "PAUSED":
                         state = "暂停";
                         break;
-                    case TriggerState.Complete:
+                    case "PAUSED_BLOCKED":
+                        state = "暂停中";
+                        break;
+                    case "COMPLETE":
                         state = "完成";
                         break;
-                    case TriggerState.Error:
+                    case "ERROR":
                         state = "异常";
                         break;
-                    case TriggerState.Blocked:
+                    case "BLOCKED":
                         state = "阻塞";
                         break;
-                    case TriggerState.None:
+                    case "NONE":
                         state = "不存在";
                         break;
                     default:
@@ -98,12 +148,12 @@ namespace Blazor.Quartz.Core.Service.Timer.Dto
         /// 已经执行次数
         /// </summary>
         [DisplayName("已经执行次数")]
-        public long RunNumber { get; set; }
+        public long TotalExecutions { get; set; }
 
         /// <summary>
         /// 异常次数
         /// </summary>
         [DisplayName("异常次数")]
-        public long ErrorNumber { get; set; }
+        public long ErrorExecutions { get; set; }
     }
 }

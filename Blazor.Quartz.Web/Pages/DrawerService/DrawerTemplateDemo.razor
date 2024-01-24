@@ -1,5 +1,5 @@
 ﻿@namespace AntDesign
-@inherits DrawerTemplate<string, string>
+@inherits FeedbackComponent<string, string>
 
 <div>
     value: <Input @bind-Value="value" />
@@ -21,6 +21,7 @@
 
     async void OnClose()
     {
-        await this.CloseAsync(value);
+        DrawerRef<string> drawerRef = base.FeedbackRef as DrawerRef<string>;
+        await drawerRef!.CloseAsync(value);
     }
 }

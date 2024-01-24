@@ -99,6 +99,7 @@ namespace Blazor.Quartz.Web
 
             //“¿¿µ◊¢»Î
             services.AddSingleton<IAppService, AppService>();
+            services.AddSingleton<IJobService, JobService>();
             services.AddSingleton<IJobLogService, JobLogService>();
 
             //services.AddScoped(sp =>

@@ -20,6 +20,7 @@ using Quartz.Util;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -551,7 +552,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                             TriggerState = await scheduler.GetTriggerState(triggers.Key),
                             PreviousFireTime = triggers.GetPreviousFireTimeUtc()?.LocalDateTime,
                             NextFireTime = triggers.GetNextFireTimeUtc()?.LocalDateTime,
-                            RunNumber = jobDetail.JobDataMap.GetLong(QuartzConstant.RUNNUMBER)
+                            ErrorExecutions = jobDetail.JobDataMap.GetLong(QuartzConstant.RUNNUMBER)
                         });
                         continue;
                     }
@@ -561,7 +562,7 @@ namespace Blazor.Quartz.Core.Service.Timer
         }
 
         /// <summary>
-        /// 获取所有Job信息（简要信息 - 刷新数据的时候使用）
+        /// 获取所有Job信息
         /// </summary>
         /// <returns></returns>
         public async Task<List<JobBriefInfo>> GetAllJobBriefInfoAsync_New()
@@ -589,44 +590,15 @@ namespace Blazor.Quartz.Core.Service.Timer
                         {
                             Name = jobKey.Name,
                             GroupName = jobKey.Group,
-                            LastErrMsg = jobDetail.JobDataMap.GetString(QuartzConstant.EXCEPTION),
                             TriggerState = await scheduler.GetTriggerState(triggers.Key),
                             PreviousFireTime = triggers.GetPreviousFireTimeUtc()?.LocalDateTime,
                             NextFireTime = triggers.GetNextFireTimeUtc()?.LocalDateTime,
-                            RunNumber = jobDetail.JobDataMap.GetLong(QuartzConstant.RUNNUMBER)
+                            ErrorExecutions = jobDetail.JobDataMap.GetLong(QuartzConstant.RUNNUMBER)
                         });
                         continue;
                     }
                 }
             }
-            var JOB_GROUP = jobList.Select(o => o.GroupName).ToArray();
-
-            var sql = $"SELECT JOB_NAME,JOB_GROUP,EXECUTION_STATUS FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WHERE 1=1";
-            var JOB_NAME_STR = "";
-            jobList.Select(o => o.Name).ToList().ForEach(o =>
-            {
-                JOB_NAME_STR = JOB_NAME_STR + $"'{o}',";
-            });
-            if (JOB_NAME_STR != "") 
-            {
-                JOB_NAME_STR = JOB_NAME_STR.Substring(0, JOB_NAME_STR.Length - 1);
-            }
-
-            var JOB_GROUP_STR = "";
-            jobList.Select(o => o.GroupName).ToList().ForEach(o =>
-            {
-                JOB_GROUP_STR = JOB_GROUP_STR + $"'{o}',";
-            });
-            if (JOB_GROUP_STR != "")
-            {
-                JOB_GROUP_STR = JOB_GROUP_STR.Substring(0, JOB_GROUP_STR.Length - 1);
-            }
-            var alllog = await DbContext.QueryAsync<JOB_EXECUTION_LOG>(sql, new { JOB_GROUP = JOB_GROUP_STR, JOB_NAME = JOB_NAME_STR });
-            jobList.ForEach(o =>
-            {
-                o.RunNumber = alllog.Count(p => p.JOB_GROUP == o.GroupName && p.JOB_NAME == o.Name);
-                o.ErrorNumber = alllog.Count(p => p.JOB_GROUP == o.GroupName && p.JOB_NAME == o.Name && p.EXECUTION_STATUS == ExecutionStatusEnum.Failure);
-            });
             return jobList;
         }
 
@@ -650,7 +622,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                 TriggerState = await scheduler.GetTriggerState(triggers.Key),
                 PreviousFireTime = triggers.GetPreviousFireTimeUtc()?.LocalDateTime,
                 NextFireTime = triggers.GetNextFireTimeUtc()?.LocalDateTime,
-                RunNumber = jobDetail.JobDataMap.GetLong(QuartzConstant.RUNNUMBER)
+                ErrorExecutions = jobDetail.JobDataMap.GetLong(QuartzConstant.RUNNUMBER)
             };
 
             return jobInfo;
@@ -730,5 +702,14 @@ namespace Blazor.Quartz.Core.Service.Timer
                    .Build();
         }
 
+        /// <summary>
+        /// 获取Job运行状态
+        /// </summary>
+        /// <returns></returns>
+        public async Task<IEnumerable<JobRunningState>> GetJobRunningState()
+        {
+            var allRunningStatus = await DbContext.QueryAsync<JobRunningState>("WITH Hours AS (SELECT DISTINCT DATEPART(HOUR, DATEADD(HOUR, -number, GETDATE())) AS HourOfDay FROM master.dbo.spt_values WHERE type = 'P' AND number BETWEEN 0 AND 12)SELECT  h.HourOfDay,COUNT(*) AS [Count],  COUNT(CASE WHEN j.EXECUTION_STATUS = 0 THEN 1 END) AS CountStatus0, COUNT(CASE WHEN j.EXECUTION_STATUS = 1 THEN 1 END) AS CountStatus1 FROM Hours h LEFT JOIN QRTZ_JOB_EXECUTION_LOG j ON DATEPART(HOUR, j.BEGIN_TIME) = h.HourOfDay WHERE j.BEGIN_TIME >= DATEADD(HOUR, -12, GETDATE()) GROUP BY    h.HourOfDay ORDER BY    h.HourOfDay");
+            return allRunningStatus;
+        }
     }
 }

@@ -3,7 +3,7 @@
 @using Blazor.Quartz.Core.Service.App.Dto
 @using Blazor.Quartz.Core.Service.App.Enum;
 @using System.ComponentModel.DataAnnotations
-@inherits DrawerTemplate<string, string>
+@inherits FeedbackComponent<string, string>
 @inject IAppService appservice
 @inject ProtectedLocalStorage localstorage
 @inject MessageService _message
@@ -71,7 +71,7 @@
             if (data.Code != 200)
             {
                 await _message.Error(data.Msg);
-                await this.CloseAsync(value);
+                this.OnClose();
             }
         }
 
@@ -80,7 +80,8 @@
 
     async void OnClose()
     {
-        await this.CloseAsync(value);
+        DrawerRef<string> drawerRef = base.FeedbackRef as DrawerRef<string>;
+        await drawerRef!.CloseAsync(value);
     }
 
     //选择器事件
@@ -105,7 +106,7 @@
             await localstorage.DeleteAsync(localstorage_key);
 
             //关闭抽屉
-            await this.CloseAsync("true");
+            this.OnClose();
 
             //提示
             await _notice.Open(new NotificationConfig()

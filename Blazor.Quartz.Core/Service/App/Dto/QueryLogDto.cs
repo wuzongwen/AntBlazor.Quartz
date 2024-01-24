@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Blazor.Quartz.Core.Service.App.Dto
 {
-    public class QueryLogDto
+    public class QueryLogDto : PageQueryDto
     {
         public string group { get; set; }
 
@@ -17,5 +17,12 @@ namespace Blazor.Quartz.Core.Service.App.Dto
         public string start_time { get; set; }
 
         public string end_time { get; set; }
+    }
+
+    public class PageQueryDto 
+    {
+        public int page_index { get; set; }
+
+        public int page_size { get; set; }
     }
 }

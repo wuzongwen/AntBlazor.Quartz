@@ -1,31 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.0.78" />
     <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="5.0.5" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="2.1.2" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.5" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.4" />
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="8.0.1" />
     <PackageReference Include="MySql.Data" Version="8.0.23" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="Quartz" Version="3.3.2" />
+    <PackageReference Include="Quartz" Version="3.3.3" />
     <PackageReference Include="Quartz.Serialization.Json" Version="3.3.2" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
     <PackageReference Include="Serilog.Sinks.Async" Version="1.4.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Blazor.Quartz.Common\Blazor.Quartz.Common.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <Folder Include="Enum\" />
   </ItemGroup>
-
 </Project>

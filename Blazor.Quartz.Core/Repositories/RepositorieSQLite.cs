@@ -1,11 +1,11 @@
 ﻿using Dapper;
 using Blazor.Quartz.Common;
-using Microsoft.Data.Sqlite;
 using Newtonsoft.Json.Linq;
 using Quartz.Impl.AdoJobStore.Common;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Data.Sqlite;
 
 namespace Blazor.Quartz.Core.Repositories
 {

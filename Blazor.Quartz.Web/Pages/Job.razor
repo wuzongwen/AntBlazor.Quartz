@@ -10,6 +10,7 @@
 @inject MessageService _message
 @inject ModalService _modalService
 @inject IAppService appservice
+@inject IJobService jobservice
 @inject IConfiguration Configuration
 @inject SchedulerCenter scheduler
 @inject NavigationManager Nav
@@ -18,10 +19,10 @@
         <Form Layout="@FormLayout.Inline" Model="queryDto">
             <FormItem Label="所属应用" Style="width:300px">
                 <Select DataSource="@appInfoList"
-                    @bind-Value="queryDto.AppName"
-                    ValueName="@nameof(AppInfo.JOB_GROUP_NAME)"
-                    LabelName="@nameof(AppInfo.JOB_GROUP_NAME)"
-                    DefaultActiveFirstItem="false">
+                        @bind-Value="queryDto.AppName"
+                        ValueName="@nameof(AppInfo.JOB_GROUP_NAME)"
+                        LabelName="@nameof(AppInfo.JOB_GROUP_NAME)"
+                        DefaultActiveFirstItem="false">
                 </Select>
             </FormItem>
             <FormItem Label="任务名称" Style="width:300px">
@@ -70,39 +71,39 @@
             <Tag Color="@color">@context.DisplayState</Tag>
         }
     </Column>
-    <Column @bind-Field="@context.RunNumber">
-        <Button Type="@ButtonType.Link" style="color: #000000;cursor:text">@context.RunNumber</Button>
+    <Column @bind-Field="@context.TotalExecutions">
+        <Button Type="@ButtonType.Link" style="color: #000000;cursor:text">@context.TotalExecutions</Button>
     </Column>
-    <Column @bind-Field="@context.ErrorNumber" Title="异常次数">
-        @if (@context.ErrorNumber > 0)
+    <Column @bind-Field="@context.ErrorExecutions" Title="异常次数">
+        @if (@context.ErrorExecutions > 0)
         {
-            <Button Type="@ButtonType.Link" OnClick="@(()=>GetLog(context.GroupName,context.Name,0))" style="color: #ff0000;float:left">@context.ErrorNumber</Button>
+            <Button Type="@ButtonType.Link" OnClick="@(()=>GetLog(context.GroupName,context.Name,0))" style="color: #ff0000;float:left">@context.TotalExecutions</Button>
         }
         else
         {
-             <Button Type="@ButtonType.Link" style="color: #ff0000;float:left">@context.ErrorNumber</Button>
+            <Button Type="@ButtonType.Link" style="color: #ff0000;float:left">@context.ErrorExecutions</Button>
         }
     </Column>
     <ActionColumn Title="操作">
         <Space Size="middle">
             <SpaceItem>
                 @{
-                    switch (context.TriggerState)
+                    switch (context.Trigger_State)
                     {
-                        case global::Quartz.TriggerState.Normal:
+                        case "NORMAL":
+                        case "WAITING":
+                        case "ACQUIRED":
+                        case "BLOCKED":
+                        case "EXECUTING":
                             <Button Danger OnClick="@(()=>Pause(context.GroupName,context.Name,AppStatusEnum.Disable))">
                                 停用
                             </Button>
                             break;
-                        case global::Quartz.TriggerState.Paused:
+                        case "PAUSED":
                             <Button Type="primary" Ghost OnClick="@(()=>Pause(context.GroupName,context.Name,AppStatusEnum.Enable))">
                                 启用
                             </Button>
                             break;
-                        case global::Quartz.TriggerState.Complete:
-                        case global::Quartz.TriggerState.Error:
-                        case global::Quartz.TriggerState.Blocked:
-                        case global::Quartz.TriggerState.None:
                         default:
 
                             break;
@@ -134,7 +135,7 @@
                     {
                         case global::Quartz.TriggerState.Normal:
                         case global::Quartz.TriggerState.Error:
-                             <Button OnClick="@(()=>ExecuteNow(context.GroupName,context.Name))">
+                            <Button OnClick="@(()=>ExecuteNow(context.GroupName,context.Name))">
                                 立即执行
                             </Button>
                             break;
@@ -148,12 +149,13 @@
     </ActionColumn>
 </Table>
 @code{
+    string middle = "middle";
     private List<JobBriefInfo> jobItems;
     private List<AppInfo> appInfoList;
 
     private QueryDto queryDto = new QueryDto();
 
-    bool isLoading = false;
+    bool isLoading = true;
 
     /// <summary>
     /// 取消删除
@@ -171,7 +173,6 @@
             var appInfoListRes = await appservice.GetList(new QueryModel());
             appInfoList = appInfoListRes.Data;
 
-            isLoading = true;
             //var response = await Http.GetAsync($"{Configuration["ApiUri"]}/api/file/getlist?name={queryDto.Name}");
             //HttpClient client = new HttpClient();
             //StringContent queryString = new StringContent("");
@@ -236,10 +237,10 @@
         {
             Console.WriteLine("OnAfterClosing:");
             await Task.CompletedTask;
-        //if (await confirmService.Show("取消后填写的数据将销毁?", "确定取消?", ConfirmButtons.YesNo) == ConfirmResult.No)
-        //{
-        //    handle.Reject();
-        //}
+            //if (await confirmService.Show("取消后填写的数据将销毁?", "确定取消?", ConfirmButtons.YesNo) == ConfirmResult.No)
+            //{
+            //    handle.Reject();
+            //}
         };
 
         drawerRef.OnClosed = async result =>
@@ -249,22 +250,24 @@
             {
                 if (result == "true")
                 {
-                ////跳转
-                //Nav.NavigateTo("job");
+                    ////跳转
+                    //Nav.NavigateTo("job");
 
-                //重载数据
-                //var data = await scheduler.GetAllJobBriefInfoAsync_New();
-                //    jobItems = new List<JobBriefInfo>();
-                //    if (data.Count > 0)
-                //    {
-                //        jobItems = data;
-                //    }
-                  await LoadTable();
-                ////重载页面
-                //await OnInitializedAsync();
+                    //重载数据
+                    //var data = await scheduler.GetAllJobBriefInfoAsync_New();
+                    //    jobItems = new List<JobBriefInfo>();
+                    //    if (data.Count > 0)
+                    //    {
+                    //        jobItems = data;
+                    //    }
+                    isLoading = true;
+                    await LoadTable();
+                    isLoading = false;
+                    ////重载页面
+                    //await OnInitializedAsync();
 
 
-            }
+                }
             }
             await InvokeAsync(StateHasChanged);
         };
@@ -322,7 +325,7 @@
     /// 查看日志
     /// </summary>
     /// <returns></returns>
-    private async Task GetLog(string JOB_GROUP_NAME, string JOB_NAME,int? STATUS)
+    private async Task GetLog(string JOB_GROUP_NAME, string JOB_NAME, int? STATUS)
     {
         var options = new DrawerOptions()
         {
@@ -341,7 +344,7 @@
             value = JsonConvert.SerializeObject(queryLogDto);
         }
 
-        var drawerRef = await DrawerService.CreateAsync<LogList, string, string>(options, value);
+        var drawerRef = await DrawerService.CreateAsync<Logs, string, string>(options, value);
 
         drawerRef.OnOpen = () =>
         {
@@ -353,11 +356,11 @@
         {
             Console.WriteLine("OnAfterClosing:");
             await Task.CompletedTask;
-        //if (await confirmService.Show("取消后填写的数据将销毁?", "确定取消?", ConfirmButtons.YesNo) == ConfirmResult.No)
-        //{
-        //    handle.Reject();
-        //}
-    };
+            //if (await confirmService.Show("取消后填写的数据将销毁?", "确定取消?", ConfirmButtons.YesNo) == ConfirmResult.No)
+            //{
+            //    handle.Reject();
+            //}
+        };
 
         drawerRef.OnClosed = async result =>
         {
@@ -385,7 +388,7 @@
     /// <returns></returns>
     private async Task LoadTable()
     {
-        var data = await scheduler.GetAllJobBriefInfoAsync_New();
+        var data = await jobservice.GetAllJobInfo();
         if (queryDto.Name != null)
         {
             data = data.Where(o => o.Name.Contains(queryDto.Name)).ToList();

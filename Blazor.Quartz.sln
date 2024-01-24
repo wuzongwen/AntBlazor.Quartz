@@ -1,7 +1,6 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31105.61
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34408.163
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blazor.Quartz.Web", "Blazor.Quartz.Web\Blazor.Quartz.Web.csproj", "{A312C73A-FB87-4130-BA67-DD6E2763C7F2}"
 EndProject
@@ -9,7 +8,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blazor.Quartz.Core", "Blazo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blazor.Quartz.Common", "Blazor.Quartz.Common\Blazor.Quartz.Common.csproj", "{60D48150-F066-49CC-A587-8795F64DDE5B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Blazor.Quartz.Service", "Blazor.Quartz.Service\Blazor.Quartz.Service.csproj", "{350B0A8D-4A3B-4267-8043-EBA533C6C1B3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blazor.Quartz.Service", "Blazor.Quartz.Service\Blazor.Quartz.Service.csproj", "{350B0A8D-4A3B-4267-8043-EBA533C6C1B3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
