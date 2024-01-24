@@ -250,23 +250,9 @@
             {
                 if (result == "true")
                 {
-                    ////跳转
-                    //Nav.NavigateTo("job");
-
-                    //重载数据
-                    //var data = await scheduler.GetAllJobBriefInfoAsync_New();
-                    //    jobItems = new List<JobBriefInfo>();
-                    //    if (data.Count > 0)
-                    //    {
-                    //        jobItems = data;
-                    //    }
                     isLoading = true;
                     await LoadTable();
                     isLoading = false;
-                    ////重载页面
-                    //await OnInitializedAsync();
-
-
                 }
             }
             await InvokeAsync(StateHasChanged);
@@ -356,10 +342,6 @@
         {
             Console.WriteLine("OnAfterClosing:");
             await Task.CompletedTask;
-            //if (await confirmService.Show("取消后填写的数据将销毁?", "确定取消?", ConfirmButtons.YesNo) == ConfirmResult.No)
-            //{
-            //    handle.Reject();
-            //}
         };
 
         drawerRef.OnClosed = async result =>
@@ -373,7 +355,9 @@
         var res = await scheduler.ExecuteNow(JOB_GROUP_NAME, JOB_NAME);
         if (res)
         {
+            isLoading = true;
             await LoadTable();
+            isLoading = false;
             await _message.Success("执行成功", 0.5);
         }
         else

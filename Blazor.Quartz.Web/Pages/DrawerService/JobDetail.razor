@@ -115,7 +115,7 @@
             }
         }
         <FormItem WrapperColOffset="8" Style="text-align:right" WrapperColSpan="16">
-            <Button Type="@ButtonType.Primary" HtmlType="submit" OnClick="OnValidate">
+            <Button Type="@ButtonType.Primary" HtmlType="submit" OnClick="OnValidate" Disabled="!form.IsModified">
                 提交
             </Button>
         </FormItem>
@@ -241,6 +241,7 @@
         var res = await scheduler.AddScheduleJobAsync(model, actionType);
         if (res.Code == 200)
         {
+            value = "true";
             //删除缓存
             await localstorage.DeleteAsync(localstorage_key);
 

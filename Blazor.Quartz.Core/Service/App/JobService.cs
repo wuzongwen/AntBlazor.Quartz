@@ -32,7 +32,7 @@ namespace Blazor.Quartz.Core.Service.App
         /// <returns></returns>
         public async Task<IEnumerable<JOB_DETAILS>> GetRunningJobList() 
         {
-            var allRunningStatus = await DbContext.QueryAsync<JOB_DETAILS>("SELECT[JOB_NAME],[JOB_GROUP]FROM [CZT_JOB].[dbo].[QRTZ_JOB_DETAILS]");
+            var allRunningStatus = await DbContext.QueryAsync<JOB_DETAILS>("SELECT [JOB_NAME],[JOB_GROUP] FROM [QRTZ_JOB_DETAILS]");
             return allRunningStatus;
         }
 
@@ -83,7 +83,7 @@ namespace Blazor.Quartz.Core.Service.App
                                 LEFT JOIN
                                     QRTZ_JOB_EXECUTION_LOG L ON (D.JOB_GROUP = L.JOB_GROUP AND D.JOB_NAME = L.JOB_NAME)
                                 WHERE
-                                    G.IS_ENABLE = 1
+                                    G.IS_ENABLE = 1 AND D.MISFIRE_INSTR = 1
                                 GROUP BY
                                     G.JOB_GROUP_NAME, D.JOB_NAME,D.NEXT_FIRE_TIME,D.PREV_FIRE_TIME,D.TRIGGER_STATE
                                 ORDER BY

@@ -16,7 +16,7 @@ namespace Blazor.Quartz.Core.Service.Base.Vaildation
     public class ModelVaildation
     {
         /// <summary>
-        /// 添加银行卡
+        /// 数据验证
         /// </summary>
         /// <param name="value"></param>
         /// <param name="validationContext"></param>
@@ -27,8 +27,7 @@ namespace Blazor.Quartz.Core.Service.Base.Vaildation
             if (value is ScheduleEntity item)
             {
                 //验证请求Url
-                string Url = @"^http(s)?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?$";
-                if (!Regex.IsMatch(item.RequestUrl, Url))
+                if (!IsValidUrl(item.RequestUrl))
                 {
                     return new ValidationResult("请求Url格式错误", new[] { "RequestUrl" });
                 }
@@ -64,6 +63,16 @@ namespace Blazor.Quartz.Core.Service.Base.Vaildation
             }
             //验证成功
             return ValidationResult.Success;
+        }
+
+        static bool IsValidUrl(string url)
+        {
+            // 正则表达式匹配URL
+            string pattern = @"^http:\/\/(localhost|(?:\d{1,3}\.){3}\d{1,3}|[\w-]+(\.[\w-]+)+)(:\d+)?(\/.*)?$";
+
+            Regex regex = new Regex(pattern);
+
+            return regex.IsMatch(url);
         }
     }
 }

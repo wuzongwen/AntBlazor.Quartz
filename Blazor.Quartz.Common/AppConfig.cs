@@ -14,7 +14,7 @@ namespace Blazor.Quartz.Common
         public static string DingTalkRobot => ConfigurationManager.GetTryConfig("DingTalkRobot");
         public static string DingTalkWebHook => ConfigurationManager.GetTryConfig("DingTalkRobot:Webhook");
         public static string DingTalkKeyWord => ConfigurationManager.GetTryConfig("DingTalkRobot:Keyword");
-        public static string ApiHost => ConfigurationManager.GetTryConfig("ApiHost");
+        public static string ApiHost => ConfigurationManager.GetTryConfig("SysConfig:ApiHost");
         public static string ServiceName => ConfigurationManager.GetTryConfig("SysConfig:ServiceName");
         public static string DisplayName => ConfigurationManager.GetTryConfig("SysConfig:DisplayName");
         public static string Description => ConfigurationManager.GetTryConfig("SysConfig:Description");

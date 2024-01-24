@@ -177,7 +177,7 @@ namespace Blazor.Quartz.Web
             var fileCount = 2;
             Log.Logger = new LoggerConfiguration()
                                  .Enrich.FromLogContext()
-                                 .MinimumLevel.Debug()
+                                 //.MinimumLevel.Debug()
                                  .MinimumLevel.Override("System", LogEventLevel.Information)
                                  .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                                  .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => p.Level == LogEventLevel.Debug).WriteTo.Async(
