@@ -2,6 +2,8 @@
 @inject NotificationService _notice
 @inject NavigationManager NavigationManager
 @using Blazor.Quartz.Core.Service.Timer.Dto
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <div class="sidebar">
     <NavMenu />
@@ -22,32 +24,40 @@
     </div>
 </div>
 @code {
-    //protected override async Task OnInitializedAsync()
-    //{
-    //    await Task.Run(() =>
-    //    {
-    //        NavigationManager.NavigateTo("http://www.baidu.com", true);
-    //    });
-    //}
+    private async Task CheckLoginStatus()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
 
+        if (!user.Identity.IsAuthenticated)
+        {
+            // Redirect to login page if not authenticated
+            NavigationManager.NavigateTo("/login");
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckLoginStatus();
+    }
     private async Task OnClick()
     {
         var reqModel = new HttpResultModel() { resCode = 0, resMsg = "成功", isSuccess = true };
         await _notice.Open(new NotificationConfig()
-            {
-                Message = "约定返回模型",
-                Duration = 3.5,
-                Description = $"{JsonConvert.SerializeObject(reqModel) }"
-            });
+        {
+            Message = "约定返回模型",
+            Duration = 3.5,
+            Description = $"{JsonConvert.SerializeObject(reqModel)}"
+        });
     }
 
     private async Task OnClick2()
     {
         await _notice.Open(new NotificationConfig()
-            {
-                Message = "项目主页",
-                Duration = 5.5,
-                Description = "https://github.com/wuzongwen/AntBlazor.Quartz"
-            });
+        {
+            Message = "项目主页",
+            Duration = 5.5,
+            Description = "https://github.com/wuzongwen/AntBlazor.Quartz"
+        });
     }
 }

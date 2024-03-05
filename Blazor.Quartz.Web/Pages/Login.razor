@@ -1,0 +1,85 @@
+﻿@page "/login"
+@using Blazor.Quartz.Core.Service.App
+@using Blazor.Quartz.Core.Service.App.Dto
+@inject ILoginService loginservice
+@inject NavigationManager NavigationManager
+@inject MessageService MsgService
+<body class="login-content">
+    <Modal Title="登录" @ref="loginModalRef" Visible="true" Closable="false" MaskClosable="false" Footer="null" Style="margin-top: 5em;">
+        <TitleTemplate>
+            <GridRow>
+                <GridCol Span="24">
+                    <GridCol Span="6" Offset="10">
+                        <h1>登录</h1>
+                    </GridCol>
+                </GridCol>
+            </GridRow>
+            <AntDesign.Form Model="@_loginData" OnFinish="OnFinish" Style="margin-top:1em">
+                <GridRow>
+                    <GridCol Span="24">
+                        <GridCol Span="16" Offset="4">
+                            <FormItem>
+                                <AntDesign.Input Size="large" Placeholder="请输入账号" AllowClear="true" @bind-Value="@context.Account">
+                                    <Prefix>
+                                        <Icon Type="user"></Icon>
+                                    </Prefix>
+                                </AntDesign.Input>
+                            </FormItem>
+                        </GridCol>
+                    </GridCol>
+                </GridRow>
+                <GridRow>
+                    <GridCol Span="24">
+                        <GridCol Span="16" Offset="4">
+                            <FormItem>
+                                <InputPassword Size="large" Placeholder="请输入密码" @bind-Value="@context.Password">
+                                    <Prefix>
+                                        <Icon Type="lock"></Icon>
+                                    </Prefix>
+                                </InputPassword>
+                            </FormItem>
+                        </GridCol>
+                    </GridCol>
+                </GridRow>
+                <GridRow>
+                    <GridCol Span="24">
+                        <GridCol Span="16" Offset="4">
+                            <FormItem>
+                                <Button Size="large" Type="@ButtonType.Primary" HtmlType="submit" Block>
+                                    登录
+                                </Button>
+                            </FormItem>
+                        </GridCol>
+                    </GridCol>
+                </GridRow>
+            </AntDesign.Form>
+        </TitleTemplate>
+    </Modal>
+</body>
+<style>
+    .login-content {
+        background: url('https://img1.baidu.com/it/u=1699929707,733321099&fm=253&fmt=auto&app=120&f=JPEG?w=1422&h=800') center/cover;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+</style>
+@code {
+    private LoginReq _loginData = new LoginReq();
+    private Modal loginModalRef;
+
+    private async Task OnFinish(EditContext editContext)
+    {
+        var res = await loginservice.UserLogin(_loginData);
+        if (res.Code != 200)
+        {
+            await MsgService.Error(res.Msg);
+        }
+        else
+        {
+            await MsgService.Success("登录成功！", 1, () =>
+            {
+                NavigationManager.NavigateTo("/", true, true);
+            });
+        }
+    }
+}

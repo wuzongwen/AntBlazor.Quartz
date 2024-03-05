@@ -1,4 +1,5 @@
 ﻿@page "/application"
+@layout MainLayout
 @using Blazor.Quartz.Core.Service.App
 @using Blazor.Quartz.Core.Service.App.Dto
 @using Blazor.Quartz.Core.Service.App.Enum;
@@ -42,10 +43,10 @@
                     {
                         case AppStatusEnum.Enable:
                             <Popconfirm Title="此操作将会停用该应用下的所有任务，确认停用吗?"
-                            OnConfirm="@(()=>Pause(context.JOB_GROUP_NAME,context.IS_ENABLE))"
-                            OnCancel="Cancel"
-                            OkText="是"
-                            CancelText="否">
+                                        OnConfirm="@(()=>Pause(context.JOB_GROUP_NAME,context.IS_ENABLE))"
+                                        OnCancel="Cancel"
+                                        OkText="是"
+                                        CancelText="否">
                                 <Button Type="primary" Danger>停用</Button>
                             </Popconfirm>
                             break;

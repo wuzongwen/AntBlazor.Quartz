@@ -3,6 +3,7 @@ using Blazor.Quartz.Core.Hubs;
 using Blazor.Quartz.Core.Service.App;
 using Blazor.Quartz.Core.Service.Timer;
 using Blazor.Quartz.Web.Extensions;
+using Blazored.SessionStorage;
 using Flurl.Http;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
@@ -40,6 +41,8 @@ namespace Blazor.Quartz.Web
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddBlazoredSessionStorage();
+
             //ÐÄÌø¼ì²é
             services.AddHealthChecks();
 
@@ -101,6 +104,7 @@ namespace Blazor.Quartz.Web
             services.AddSingleton<IAppService, AppService>();
             services.AddSingleton<IJobService, JobService>();
             services.AddSingleton<IJobLogService, JobLogService>();
+            services.AddScoped<ILoginService, LoginService>();
 
             //services.AddScoped(sp =>
             //    new HttpClient
