@@ -77,7 +77,7 @@
     <Column @bind-Field="@context.ErrorExecutions" Title="异常次数">
         @if (@context.ErrorExecutions > 0)
         {
-            <Button Type="@ButtonType.Link" OnClick="@(()=>GetLog(context.GroupName,context.Name,0))" style="color: #ff0000;float:left">@context.TotalExecutions</Button>
+            <Button Type="@ButtonType.Link" OnClick="@(()=>GetLog(context.GroupName,context.Name,0))" style="color: #ff0000;float:left">@context.ErrorExecutions</Button>
         }
         else
         {
