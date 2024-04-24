@@ -18,6 +18,7 @@ using Talk.Extensions.Helper;
 using Flurl.Http;
 using Blazor.Quartz.Common.DingTalkRobot.Robot;
 using System.Text.RegularExpressions;
+using System.Collections;
 
 namespace Blazor.Quartz.Core.Service.Timer
 {
@@ -35,7 +36,7 @@ namespace Blazor.Quartz.Core.Service.Timer
             requestUrl = requestUrl?.IndexOf("http") == 0 ? requestUrl : "http://" + requestUrl;
             var requestParameters = context.JobDetail.JobDataMap.GetString(QuartzConstant.REQUESTPARAMETERS);
             var headersString = context.JobDetail.JobDataMap.GetString(QuartzConstant.HEADERS);
-            var headers = headersString != null ? JsonConvert.DeserializeObject<Dictionary<string, string>>(headersString?.Trim()) : null;
+            var headers = headersString != null ? JsonConvert.DeserializeObject<Dictionary<string, object>>(headersString?.Trim()) : null;
             var requestType = (RequestTypeEnum)int.Parse(context.JobDetail.JobDataMap.GetString(QuartzConstant.REQUESTTYPE));
             var TimeOut = 30;
             if (!string.IsNullOrEmpty(context.JobDetail.JobDataMap.GetString(QuartzConstant.TIMEOUT)))
@@ -58,6 +59,18 @@ namespace Blazor.Quartz.Core.Service.Timer
             LogInfo.Req_Type = LogInfo.RequestType;
             LogInfo.Headers = headersString;
             LogInfo.Result = requestParameters;
+            Dictionary<string, object> reqData = new Dictionary<string, object>();
+            if (requestParameters != null) 
+            {
+                try
+                {
+                    reqData = JsonConvert.DeserializeObject<Dictionary<string, object>>(requestParameters?.Trim());
+                }
+                catch
+                {
+                    requestParameters = null;
+                }
+            }
             switch (requestType)
             {
                 case RequestTypeEnum.Get:
@@ -78,7 +91,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                     {
                         if (requestParameters != null)
                         {
-                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(TimeOut).PostStringAsync(requestParameters);
+                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(TimeOut).PostJsonAsync(reqData);
                         }
                         else
                         {
@@ -89,7 +102,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                     {
                         if (requestParameters != null)
                         {
-                            flurlResponse = await requestUrl.WithTimeout(TimeOut).PostJsonAsync(requestParameters);
+                            flurlResponse = await requestUrl.WithTimeout(TimeOut).PostJsonAsync(reqData);
                         }
                         else 
                         {
@@ -104,7 +117,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                     {
                         if (requestParameters != null)
                         {
-                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(TimeOut).PutStringAsync(requestParameters);
+                            flurlResponse = await requestUrl.WithHeaders(headers).WithTimeout(TimeOut).PutJsonAsync(reqData);
                         }
                         else 
                         {
@@ -115,7 +128,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                     {
                         if (requestParameters != null)
                         {
-                            flurlResponse = await requestUrl.WithTimeout(TimeOut).PutStringAsync(requestParameters);
+                            flurlResponse = await requestUrl.WithTimeout(TimeOut).PutJsonAsync(reqData);
                         }
                         else
                         {
