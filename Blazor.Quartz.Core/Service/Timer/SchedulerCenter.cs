@@ -168,7 +168,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                         result.Msg = "任务已存在";
                         return result;
                     }
-                    isRestart = true;
+                    isRestart = false;
                 }
                 else 
                 {

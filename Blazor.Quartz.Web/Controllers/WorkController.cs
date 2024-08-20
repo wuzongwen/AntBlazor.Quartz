@@ -119,6 +119,7 @@ namespace Blazor.Quartz.Web.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPost]
+        [HttpGet]
         public async Task<IActionResult> ClearnLog()
         {
             HttpResultModel httpResultModel = new HttpResultModel();
