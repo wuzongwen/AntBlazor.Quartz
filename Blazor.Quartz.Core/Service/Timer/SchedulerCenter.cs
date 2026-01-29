@@ -9,6 +9,7 @@ using Blazor.Quartz.Core.Service.App.Enum;
 using Blazor.Quartz.Core.Service.Base.Dto;
 using Blazor.Quartz.Core.Service.Timer.Dto;
 using Blazor.Quartz.Core.Service.Timer.Enum;
+using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Impl.AdoJobStore;
@@ -24,6 +25,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Quartz.Spi;
 
 namespace Blazor.Quartz.Core.Service.Timer
 {
@@ -32,6 +34,8 @@ namespace Blazor.Quartz.Core.Service.Timer
     /// </summary>
     public class SchedulerCenter
     {
+        private readonly IServiceProvider _serviceProvider;
+
         /// <summary>
         /// 数据连接
         /// </summary>
@@ -41,6 +45,15 @@ namespace Blazor.Quartz.Core.Service.Timer
         /// </summary>
         private string driverDelegateType;
 
+        // Constructor used by DI - accepts IServiceProvider so we can create jobs via DI
+        public SchedulerCenter(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+            InitDriverDelegateType();
+            dbProvider = new DbProvider(AppConfig.DbProviderName, AppConfig.ConnectionString);
+        }
+
+        // Parameterless constructor kept for compatibility if needed
         public SchedulerCenter()
         {
             InitDriverDelegateType();
@@ -122,6 +135,24 @@ namespace Blazor.Quartz.Core.Service.Timer
                 };
                 DirectSchedulerFactory.Instance.CreateScheduler("bennyScheduler", "AUTO", new DefaultThreadPool(), jobStore);
                 scheduler = await SchedulerRepository.Instance.Lookup("bennyScheduler");
+
+                // If we have an IServiceProvider from DI, set a JobFactory that uses it
+                if (_serviceProvider != null)
+                {
+                    var jobFactory = new Blazor.Quartz.Core.Dependency.ServiceProviderJobFactory(_serviceProvider);
+                    scheduler.JobFactory = jobFactory;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Ensure scheduler initialized
+        /// </summary>
+        private async Task EnsureSchedulerAsync()
+        {
+            if (scheduler == null)
+            {
+                await InitSchedulerAsync();
             }
         }
 
@@ -153,6 +184,7 @@ namespace Blazor.Quartz.Core.Service.Timer
         /// <returns></returns>
         public async Task<BaseResult> AddScheduleJobAsync(ScheduleEntity entity,int actionType, long? runNumber = null)
         {
+            await EnsureSchedulerAsync();
             var result = new BaseResult();
             try
             {
@@ -255,10 +287,15 @@ namespace Blazor.Quartz.Core.Service.Timer
         /// <returns></returns>
         public async Task<BaseResult> StopOrDelScheduleJobAsync(string jobGroup, string jobName, bool isDelete = false, bool isEdit = false)
         {
+            await EnsureSchedulerAsync();
             BaseResult result;
             try
             {
+                // 立即停止当前正在运行的任务
+                await scheduler.Interrupt(new JobKey(jobName, jobGroup));
+                //暂停后续任务的触发
                 await scheduler.PauseJob(new JobKey(jobName, jobGroup));
+
                 if (isDelete)
                 {
                     await scheduler.DeleteJob(new JobKey(jobName, jobGroup));
@@ -304,6 +341,7 @@ namespace Blazor.Quartz.Core.Service.Timer
         /// <param name="jobGroup">任务分组</param>
         public async Task<BaseResult> ResumeJobAsync(string jobGroup, string jobName)
         {
+            await EnsureSchedulerAsync();
             BaseResult result = new BaseResult();
             try
             {
@@ -357,6 +395,7 @@ namespace Blazor.Quartz.Core.Service.Timer
         /// <returns></returns>
         public async Task<ScheduleEntity> QueryJobAsync(string jobGroup, string jobName)
         {
+            await EnsureSchedulerAsync();
             var entity = new ScheduleEntity();
             var jobKey = new JobKey(jobName, jobGroup);
             var jobDetail = await scheduler.GetJobDetail(jobKey);
@@ -409,6 +448,7 @@ namespace Blazor.Quartz.Core.Service.Timer
         /// <returns></returns>
         public async Task<bool> TriggerJobAsync(JobKey jobKey)
         {
+            await EnsureSchedulerAsync();
             await scheduler.TriggerJob(jobKey);
             return true;
         }
@@ -420,6 +460,7 @@ namespace Blazor.Quartz.Core.Service.Timer
         /// <returns></returns>
         public async Task<bool> ExecuteNow(string jobGroup, string jobName)
         {
+            await EnsureSchedulerAsync();
             var jobKey = new JobKey(jobName, jobGroup);
             await scheduler.TriggerJob(jobKey);
             return true;
@@ -432,6 +473,7 @@ namespace Blazor.Quartz.Core.Service.Timer
         /// <returns></returns>
         public async Task<long> GetRunNumberAsync(JobKey jobKey)
         {
+            await EnsureSchedulerAsync();
             var jobDetail = await scheduler.GetJobDetail(jobKey);
             return jobDetail.JobDataMap.GetLong(QuartzConstant.RUNNUMBER);
         }
@@ -442,6 +484,7 @@ namespace Blazor.Quartz.Core.Service.Timer
         /// <returns></returns>
         public async Task<List<JobInfoEntity>> GetAllJobAsync()
         {
+            await EnsureSchedulerAsync();
             List<JobKey> jboKeyList = new List<JobKey>();
             List<JobInfoEntity> jobInfoList = new List<JobInfoEntity>();
             var groupNames = await scheduler.GetJobGroupNames();
@@ -508,6 +551,7 @@ namespace Blazor.Quartz.Core.Service.Timer
         /// <returns></returns>          
         public async Task<bool> RemoveErrLog(string jobGroup, string jobName)
         {
+            await EnsureSchedulerAsync();
             IRepositorie logRepositorie = RepositorieFactory.CreateRepositorie(driverDelegateType, dbProvider);
 
             if (logRepositorie == null) return false;
@@ -527,6 +571,7 @@ namespace Blazor.Quartz.Core.Service.Timer
         /// <returns></returns>
         public async Task<List<JobBriefInfoEntity>> GetAllJobBriefInfoAsync()
         {
+            await EnsureSchedulerAsync();
             List<JobKey> jboKeyList = new List<JobKey>();
             List<JobBriefInfoEntity> jobInfoList = new List<JobBriefInfoEntity>();
             var groupNames = await scheduler.GetJobGroupNames();
@@ -567,6 +612,7 @@ namespace Blazor.Quartz.Core.Service.Timer
         /// <returns></returns>
         public async Task<List<JobBriefInfo>> GetAllJobBriefInfoAsync_New()
         {
+            await EnsureSchedulerAsync();
             List<JobKey> jboKeyList = new List<JobKey>();
             List<JobBriefInfoEntity> jobInfoList = new List<JobBriefInfoEntity>();
             List<JobBriefInfo> jobList = new List<JobBriefInfo>();
@@ -609,6 +655,7 @@ namespace Blazor.Quartz.Core.Service.Timer
         /// <returns></returns>
         public async Task<JobBriefInfo> GetJobBriefInfoAsync(JobKey jobKey) 
         {
+            await EnsureSchedulerAsync();
             JobBriefInfo jobInfo = new JobBriefInfo();
             var jobDetail = await scheduler.GetJobDetail(jobKey);
             var triggersList = await scheduler.GetTriggersOfJob(jobKey);

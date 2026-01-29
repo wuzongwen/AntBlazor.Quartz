@@ -66,7 +66,8 @@ namespace Blazor.Quartz.Core.Service.App
                 sqlCondition += " AND EXECUTION_STATUS = @EXECUTION_STATUS";
                 dynamicParams.Add("EXECUTION_STATUS", query.status);
             }
-            var dataCount = await DbContext.QueryFirstOrDefaultAsync<int>($"SELECT COUNT(*)FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG {sqlCondition}", dynamicParams);
+
+            var dataCount = await DbContext.QueryFirstOrDefaultAsync<int>($"SELECT COUNT(*)FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WITH (NOLOCK) {sqlCondition}", dynamicParams);
             dynamicParams.Add("StartRow", (query.page_index - 1) * query.page_size + 1);
             dynamicParams.Add("EndRow", query.page_index * query.page_size);
             var dataPageListSql = string.Format(sql, $@"(
@@ -79,7 +80,7 @@ namespace Blazor.Quartz.Core.Service.App
                             ,[REQUEST_DATA]
                             ,[RESPONSE_DATA]
                             ,[BEGIN_TIME], ROW_NUMBER() OVER (ORDER BY BEGIN_TIME DESC) AS RowNum
-                    FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG {sqlCondition}
+                    FROM {QuartzConstant.TablePrefix}JOB_EXECUTION_LOG WITH (NOLOCK) {sqlCondition}
                 ) AS Temp WHERE RowNum BETWEEN @StartRow AND @EndRow");
             var res = await DbContext.QueryAsync<JOB_EXECUTION_LOG>(dataPageListSql, dynamicParams);
             PageRes<List<JOB_EXECUTION_LOG>> pageRes = new PageRes<List<JOB_EXECUTION_LOG>>();

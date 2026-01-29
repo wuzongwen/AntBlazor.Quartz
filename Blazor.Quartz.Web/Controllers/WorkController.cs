@@ -1,6 +1,5 @@
 ﻿using Blazor.Quartz.Common.DingTalkRobot.Robot;
 using Blazor.Quartz.Common;
-using Flurl.Http;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using System;
@@ -18,6 +17,7 @@ using Blazor.Quartz.Core.Service.App.Enum;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
+using System.Net.Http;
 
 namespace Blazor.Quartz.Web.Controllers
 {
@@ -28,6 +28,13 @@ namespace Blazor.Quartz.Web.Controllers
     [EnableCors("AllowSameDomain")] //允许跨域 
     public class WorkController : Controller
     {
+        private readonly IHttpClientFactory _httpClientFactory;
+
+        public WorkController(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+
         /// <summary>
         /// 检查心跳
         /// </summary>
@@ -39,7 +46,8 @@ namespace Blazor.Quartz.Web.Controllers
             try
             {
                 var api = AppConfig.ApiHost + "/healthcheck";
-                var res = await api.GetStringAsync();
+                var client = _httpClientFactory.CreateClient("PollyClient");
+                var res = await client.GetStringAsync(api);
                 if (res.ToLower() != "ok")
                 {
                     await DingTalkRobot.SendTextMessage($"【心跳检查服务】任务调度状态异常，请检查", null, false);
@@ -48,7 +56,14 @@ namespace Blazor.Quartz.Web.Controllers
                 httpResultModel.isSuccess = true;
                 httpResultModel.resMsg = "【执行成功】";
             }
-            catch (FlurlHttpException ex)
+            catch (HttpRequestException ex)
+            {
+                httpResultModel.resData = JsonConvert.SerializeObject(ex);
+                httpResultModel.isSuccess = false;
+                httpResultModel.resMsg = "【异常】";
+                await DingTalkRobot.SendTextMessage($"【心跳检查】【异常】消息:{ex.Message}", null, false);
+            }
+            catch (Exception ex)
             {
                 httpResultModel.resData = JsonConvert.SerializeObject(ex);
                 httpResultModel.isSuccess = false;

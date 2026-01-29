@@ -19,11 +19,14 @@ using Serilog.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Net.Http;
 using System.Reflection;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
+using System.Threading;
 using System.Threading.Tasks;
+using Blazor.Quartz.Core.Dependency;
 
 namespace Blazor.Quartz.Web
 {
@@ -93,9 +96,38 @@ namespace Blazor.Quartz.Web
             //注入Polly重试服务
             services.AddSingleton<Policies>();
 
-            //注入任务调度
+            // Register PolicyHandler and configure named HttpClient that uses it
+            services.AddTransient<PolicyHandler>();
+            services.AddHttpClient("PollyClient").AddHttpMessageHandler<PolicyHandler>();
+
+            // Register a dedicated HttpClient for long-running, no-retry requests
+            // Read configuration from appsettings.json (section: HttpClient)
+            var maxConnections = Configuration.GetValue<int?>("HttpClient:MaxConnectionsPerServer") ?? 100;
+            var pooledConnectionLifetimeMinutes = Configuration.GetValue<int?>("HttpClient:PooledConnectionLifetimeMinutes") ?? 10;
+            var pooledConnectionIdleTimeoutMinutes = Configuration.GetValue<int?>("HttpClient:PooledConnectionIdleTimeoutMinutes") ?? 2;
+            var defaultTimeoutSeconds = Configuration.GetValue<int?>("HttpClient:DefaultTimeoutSeconds") ?? 0;
+
+            services.AddHttpClient("NoRetryLongRunning")
+                .ConfigureHttpClient(client =>
+                {
+                    // if DefaultTimeoutSeconds <= 0 then use infinite timeout
+                    client.Timeout = defaultTimeoutSeconds > 0 ? TimeSpan.FromSeconds(defaultTimeoutSeconds) : Timeout.InfiniteTimeSpan;
+                })
+                .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+                {
+                    MaxConnectionsPerServer = maxConnections,
+                    PooledConnectionLifetime = TimeSpan.FromMinutes(pooledConnectionLifetimeMinutes),
+                    PooledConnectionIdleTimeout = TimeSpan.FromMinutes(pooledConnectionIdleTimeoutMinutes),
+                    UseProxy = false
+                });
+
+            // register ServiceProviderJobFactory so SchedulerCenter can set JobFactory
+            services.AddSingleton<ServiceProviderJobFactory>();
+
+            //注入任务调度 using DI-provided IServiceProvider
+            services.AddSingleton<SchedulerCenter>(sp => new SchedulerCenter(sp));
+            //注入任务调度（HostedService should be added after SchedulerCenter registration to ensure DI instance is used）
             services.AddHostedService<QuartzService>();
-            services.AddSingleton<SchedulerCenter>();
 
             //依赖注入
             services.AddSingleton<IAppService, AppService>();
@@ -136,10 +168,10 @@ namespace Blazor.Quartz.Web
                 }
             });
 
-            //配置Flurl使用Polly实现重试Policy
-            var policies = app.ApplicationServices.GetService<Policies>();
-            FlurlHttp.Configure(setting =>
-                        setting.HttpClientFactory = new PollyHttpClientFactory(policies));
+            // set service provider for non-DI created components (e.g. Quartz jobs created without DI)
+            ServiceLocator.ServiceProvider = app.ApplicationServices;
+
+            // NOTE: replaced Flurl's HttpClientFactory configuration with IHttpClientFactory registration above
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();

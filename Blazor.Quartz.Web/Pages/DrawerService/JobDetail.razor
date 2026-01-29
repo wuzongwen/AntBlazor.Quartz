@@ -115,7 +115,7 @@
             }
         }
         <FormItem WrapperColOffset="8" Style="text-align:right" WrapperColSpan="16">
-            <Button Type="@ButtonType.Primary" HtmlType="submit" OnClick="OnValidate" Disabled="!form.IsModified">
+            <Button Type="@ButtonType.Primary" HtmlType="submit" OnClick="OnValidate" Disabled="!isModified">
                 提交
             </Button>
         </FormItem>
@@ -131,6 +131,9 @@
     private string AlertMessage;
     private ScheduleEntity model;
     private List<AppInfo> appInfoList;
+    private bool isModified = false;
+    private bool isInitializing = true;
+    private ScheduleEntity originalModel;
 
     /// <summary>
     /// 秒渲染片段
@@ -176,22 +179,27 @@
             model.RequestParameters = data.RequestParameters;
             model.Description = data.Description;
         }
-        base.OnInitialized();
-    }
+        // take snapshot of original state
+        originalModel = JsonConvert.DeserializeObject<ScheduleEntity>(JsonConvert.SerializeObject(model));
 
-    protected override void OnInitialized()
-    {
-        Task.Run(async() =>
+        // load app list here (avoid Task.Run in OnInitialized)
+        try
         {
-            //获取应用列表
             var appInfoListRes = await appservice.GetList(new QueryModel());
             appInfoList = appInfoListRes.Data;
-            if (appInfoList.Count() < 1)
+            if (appInfoList == null || appInfoList.Count() < 1)
             {
                 OnClose();
                 await _message.Error("请先添加应用");
             }
-        });
+        }
+        catch (Exception ex)
+        {
+            await _message.Error(ex.Message);
+        }
+
+        isInitializing = false;
+        base.OnInitialized();
     }
 
     async void OnClose()
@@ -210,8 +218,8 @@
     //选择器事件
     private void RequestTypeOnChange(RequestTypeEnum value)
     {
-        DataSave();
         model.RequestType = value;
+        _ = DataSave();
         Console.WriteLine($"selected value: ${value}");
     }
 
@@ -222,7 +230,7 @@
         model.Cron = "";
         model.IntervalSecond = 0;
         model.RunTimes = null;
-        DataSave();
+        _ = DataSave();
         Console.WriteLine($"selected value: ${value}");
     }
 
@@ -255,6 +263,10 @@
                 Duration = 3.5,
                 Description = "操作成功"
             });
+                // reset modified flag
+                isModified = false;
+                // update original snapshot
+                originalModel = JsonConvert.DeserializeObject<ScheduleEntity>(JsonConvert.SerializeObject(model));
         }
         else
         {
@@ -290,10 +302,28 @@
     /// <summary>
     /// 数据缓存
     /// </summary>
-    private async void DataSave()
+    private async Task DataSave()
     {
+        if (isInitializing) return;
+
+        // compare current model with original snapshot
+        var cur = JsonConvert.SerializeObject(model ?? new ScheduleEntity());
+        var orig = JsonConvert.SerializeObject(originalModel ?? new ScheduleEntity());
+        var changed = cur != orig;
+
+        isModified = changed;
+
+        // persist cache only for new (Options==null) and when changed
         if (this.Options == null)
-            await localstorage.SetAsync(localstorage_key, model);
+        {
+            if (isModified)
+                await localstorage.SetAsync(localstorage_key, model);
+            else
+                await localstorage.DeleteAsync(localstorage_key);
+        }
+
+        // ensure UI updates when modification state changes
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task OnSelectYear(string value)

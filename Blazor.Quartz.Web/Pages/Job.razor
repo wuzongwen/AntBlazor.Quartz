@@ -40,6 +40,7 @@
         <Button Type="@ButtonType.Primary" OnClick="@(()=>AddApplication(null,null))">新增任务</Button>
     </PageHeaderExtra>
 </PageHeader>
+<div @key="tableKey">
 <Table DataSource="@jobItems" Bordered=@true Loading="@isLoading" Size=@TableSize.Middle>
     <Column @bind-Field="@context.GroupName" Title="应用"></Column>
     <Column @bind-Field="@context.Name"></Column>
@@ -148,6 +149,7 @@
         </Space>
     </ActionColumn>
 </Table>
+</div>
 @code{
     string middle = "middle";
     private List<JobBriefInfo> jobItems;
@@ -156,6 +158,8 @@
     private QueryDto queryDto = new QueryDto();
 
     bool isLoading = true;
+
+    int tableKey = 0;
 
     /// <summary>
     /// 取消删除
@@ -173,7 +177,7 @@
             var appInfoListRes = await appservice.GetList(new QueryModel());
             appInfoList = appInfoListRes.Data;
 
-            //var response = await Http.GetAsync($"{Configuration["ApiUri"]}/api/file/getlist?name={queryDto.Name}");
+            //var response = await Http.GetAsync($"${Configuration["ApiUri"]}/api/file/getlist?name={queryDto.Name}");
             //HttpClient client = new HttpClient();
             //StringContent queryString = new StringContent("");
             //var res = await Http.PostAsync("http://api/Home/GetHomePageInfo", queryString);
@@ -382,5 +386,6 @@
             data = data.Where(o => o.GroupName.Contains(queryDto.AppName)).ToList();
         }
         jobItems = data.OrderBy(o => o.GroupName).ToList();
+        tableKey++; // force table component recreate to reset pagination to first page
     }
 }
