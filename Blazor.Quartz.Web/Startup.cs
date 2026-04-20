@@ -93,12 +93,12 @@ namespace Blazor.Quartz.Web
                 opt.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All);
             });
 
-            //注入Polly重试服务
-            services.AddSingleton<Policies>();
+            ////注入Polly重试服务
+            //services.AddSingleton<Policies>();
 
-            // Register PolicyHandler and configure named HttpClient that uses it
-            services.AddTransient<PolicyHandler>();
-            services.AddHttpClient("PollyClient").AddHttpMessageHandler<PolicyHandler>();
+            //// Register PolicyHandler and configure named HttpClient that uses it
+            //services.AddTransient<PolicyHandler>();
+            //services.AddHttpClient("PollyClient").AddHttpMessageHandler<PolicyHandler>();
 
             // Register a dedicated HttpClient for long-running, no-retry requests
             // Read configuration from appsettings.json (section: HttpClient)

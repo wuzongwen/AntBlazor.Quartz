@@ -46,7 +46,7 @@ namespace Blazor.Quartz.Web.Controllers
             try
             {
                 var api = AppConfig.ApiHost + "/healthcheck";
-                var client = _httpClientFactory.CreateClient("PollyClient");
+                var client = _httpClientFactory.CreateClient("NoRetryLongRunning");
                 var res = await client.GetStringAsync(api);
                 if (res.ToLower() != "ok")
                 {
