@@ -24,5 +24,6 @@ namespace Blazor.Quartz.Common
         public static string ReportJobCron => ConfigurationManager.GetTryConfig("CronConfig:ReportJobCron"); 
         public static string ClearnLogJobCron => ConfigurationManager.GetTryConfig("CronConfig:ClearnLogJobCron");
         public static int WarnTime => Convert.ToInt32(ConfigurationManager.GetTryConfig("SysConfig:WarnTime", "30"));
+        public static int DefaultJobTimeout => Convert.ToInt32(ConfigurationManager.GetTryConfig("SysConfig:DefaultJobTimeout", "3600"));
     }
 }

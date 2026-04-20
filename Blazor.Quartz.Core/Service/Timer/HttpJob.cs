@@ -20,6 +20,7 @@ using System.Text.RegularExpressions;
 using System.Collections;
 using Blazor.Quartz.Core.Dependency;
 using System.Threading;
+using Blazor.Quartz.Common;
 
 namespace Blazor.Quartz.Core.Service.Timer
 {
@@ -48,7 +49,7 @@ namespace Blazor.Quartz.Core.Service.Timer
             var headersString = context.JobDetail.JobDataMap.GetString(QuartzConstant.HEADERS);
             var headers = headersString != null ? JsonConvert.DeserializeObject<Dictionary<string, object>>(headersString?.Trim()) : null;
             var requestType = (RequestTypeEnum)int.Parse(context.JobDetail.JobDataMap.GetString(QuartzConstant.REQUESTTYPE));
-            var TimeOut = 30;
+            var TimeOut = AppConfig.DefaultJobTimeout;
             if (!string.IsNullOrEmpty(context.JobDetail.JobDataMap.GetString(QuartzConstant.TIMEOUT)))
             {
                 TimeOut = context.JobDetail.JobDataMap.GetIntValueFromString(QuartzConstant.TIMEOUT);
