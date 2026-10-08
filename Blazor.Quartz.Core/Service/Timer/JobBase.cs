@@ -1,4 +1,4 @@
-﻿using Blazor.Quartz.Common;
+using Blazor.Quartz.Common;
 using Blazor.Quartz.Common.DingTalkRobot.Robot;
 using Blazor.Quartz.Core.Const;
 using Blazor.Quartz.Core.Dapper;
@@ -76,7 +76,7 @@ namespace Blazor.Quartz.Core.Service.Timer
 
                 var classErr = string.IsNullOrWhiteSpace(LogInfo.ErrorMsg) ? "" : "error";
                
-                if (seconds >= warnTime)//如果请求超过20秒，警告  
+                if (seconds >= warnTime && !context.CancellationToken.IsCancellationRequested)//如果请求超过20秒，警告  
                 {
                     await WarningAsync(LogInfo.JobName, "耗时过长 - " + JsonConvert.SerializeObject(LogInfo));
                 }

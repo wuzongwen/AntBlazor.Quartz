@@ -1,4 +1,4 @@
-﻿using Blazor.Quartz.Core.Service.Base.Vaildation;
+using Blazor.Quartz.Core.Service.Base.Vaildation;
 using Blazor.Quartz.Core.Service.Timer.Enum;
 using System;
 using System.Collections.Generic;
@@ -75,6 +75,7 @@ namespace Blazor.Quartz.Core.Service.Timer.Dto
         /// <summary>
         /// 超时时间(单位秒)
         /// </summary>
+        [Range(0, 864000, ErrorMessage = "超时时长必须在0到864000秒之间，0表示无限长")]
         public int? TimeOut { get; set; }
         /// <summary>
         /// Headers(可以包含如：Authorization授权认证)

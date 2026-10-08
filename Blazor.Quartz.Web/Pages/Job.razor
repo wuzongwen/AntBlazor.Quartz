@@ -1,4 +1,4 @@
-﻿@page "/job"
+@page "/job"
 @using Blazor.Quartz.Core.Service.Timer.Dto
 @using Blazor.Quartz.Core.Service.Timer
 @using Blazor.Quartz.Core.Service.App
@@ -101,6 +101,7 @@
                             </Button>
                             break;
                         case "PAUSED":
+                        case "PAUSED_BLOCKED":
                             <Button Type="primary" Ghost OnClick="@(()=>Pause(context.GroupName,context.Name,AppStatusEnum.Enable))">
                                 启用
                             </Button>

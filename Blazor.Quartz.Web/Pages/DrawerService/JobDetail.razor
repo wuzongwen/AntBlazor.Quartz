@@ -1,4 +1,4 @@
-﻿@namespace AntDesign
+@namespace AntDesign
 @using Blazor.Quartz.Core.Service.Timer.Dto
 @using Blazor.Quartz.Core.Service.App
 @using Blazor.Quartz.Core.Service.Timer.Enum
@@ -91,9 +91,13 @@
                     break;
             }
         }
-        <FormItem Label="超时时长(单位秒)">
-            <AntDesign.InputNumber @bind-Value="@model.TimeOut" Placeholder="默认3600秒(1小时)" OnChange="DataSave" TValue="int?" Min="1" Max="864000"></AntDesign.InputNumber>
+        <FormItem Label="超时时长(单位秒)" Extra="留空使用系统默认值；0表示无限长；超过1800秒可能长期占用执行资源">
+            <AntDesign.InputNumber @bind-Value="@model.TimeOut" Placeholder="留空默认3600秒，0表示无限长" OnChange="TimeOutOnChange" TValue="int?" Min="0" Max="864000"></AntDesign.InputNumber>
         </FormItem>
+        @if (showTimeoutRisk)
+        {
+            <Alert Message="当前超时时长超过30分钟，任务可能长时间占用连接；无限超时任务还可能因并发保护被跳过，请确认目标接口能够正常结束。" Type="AlertType.Warning" ShowIcon="true" />
+        }
         <FormItem Label="约定返回模型">
             <Switch @bind-Value="@context.CovenantReturnModel" />
         </FormItem>
@@ -134,6 +138,7 @@
     private bool isModified = false;
     private bool isInitializing = true;
     private ScheduleEntity originalModel;
+    private bool showTimeoutRisk;
 
     /// <summary>
     /// 秒渲染片段
@@ -179,6 +184,7 @@
             model.RequestParameters = data.RequestParameters;
             model.Description = data.Description;
         }
+        showTimeoutRisk = model.TimeOut == 0 || model.TimeOut > 1800;
         // take snapshot of original state
         originalModel = JsonConvert.DeserializeObject<ScheduleEntity>(JsonConvert.SerializeObject(model));
 
@@ -232,6 +238,13 @@
         model.RunTimes = null;
         _ = DataSave();
         Console.WriteLine($"selected value: ${value}");
+    }
+
+    private void TimeOutOnChange(int? value)
+    {
+        model.TimeOut = value;
+        showTimeoutRisk = value == 0 || value > 1800;
+        _ = DataSave();
     }
 
     /// <summary>

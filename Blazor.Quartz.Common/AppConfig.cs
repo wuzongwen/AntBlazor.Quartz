@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,5 +25,7 @@ namespace Blazor.Quartz.Common
         public static string ClearnLogJobCron => ConfigurationManager.GetTryConfig("CronConfig:ClearnLogJobCron");
         public static int WarnTime => Convert.ToInt32(ConfigurationManager.GetTryConfig("SysConfig:WarnTime", "30"));
         public static int DefaultJobTimeout => Convert.ToInt32(ConfigurationManager.GetTryConfig("SysConfig:DefaultJobTimeout", "3600"));
+        public static int QuartzMaxConcurrency => Math.Max(2, Convert.ToInt32(ConfigurationManager.GetTryConfig("Quartz:MaxConcurrency", "20")));
+        public static int InfiniteTimeoutMaxConcurrency => Math.Max(1, Math.Min(Convert.ToInt32(ConfigurationManager.GetTryConfig("Quartz:InfiniteTimeoutMaxConcurrency", "2")), QuartzMaxConcurrency - 1));
     }
 }

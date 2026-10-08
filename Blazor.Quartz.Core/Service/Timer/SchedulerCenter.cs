@@ -1,4 +1,4 @@
-﻿using Blazor.Quartz.Common;
+using Blazor.Quartz.Common;
 using Blazor.Quartz.Common.DingTalkRobot.Robot;
 using Blazor.Quartz.Core.Const;
 using Blazor.Quartz.Core.Dapper;
@@ -133,7 +133,10 @@ namespace Blazor.Quartz.Core.Service.Timer
                     DriverDelegateType = driverDelegateType,
                     ObjectSerializer = serializer
                 };
-                DirectSchedulerFactory.Instance.CreateScheduler("bennyScheduler", "AUTO", new DefaultThreadPool(), jobStore);
+                DirectSchedulerFactory.Instance.CreateScheduler("bennyScheduler", "AUTO", new DefaultThreadPool
+                {
+                    MaxConcurrency = AppConfig.QuartzMaxConcurrency
+                }, jobStore);
                 scheduler = await SchedulerRepository.Instance.Lookup("bennyScheduler");
 
                 // If we have an IServiceProvider from DI, set a JobFactory that uses it
@@ -291,14 +294,13 @@ namespace Blazor.Quartz.Core.Service.Timer
             BaseResult result;
             try
             {
-                // 立即停止当前正在运行的任务
-                await scheduler.Interrupt(new JobKey(jobName, jobGroup));
-                //暂停后续任务的触发
-                await scheduler.PauseJob(new JobKey(jobName, jobGroup));
+                var jobKey = new JobKey(jobName, jobGroup);
+                await scheduler.PauseJob(jobKey);
+                await scheduler.Interrupt(jobKey);
 
                 if (isDelete)
                 {
-                    await scheduler.DeleteJob(new JobKey(jobName, jobGroup));
+                    await scheduler.DeleteJob(jobKey);
                     result = new BaseResult
                     {
                         Code = 200,

@@ -27,6 +27,7 @@ namespace Blazor.Quartz.Core.Service.Timer
     public class HttpJob : JobBase<LogUrlModel>, IJob
     {
         private readonly IHttpClientFactory _httpClientFactory;
+        private static readonly SemaphoreSlim InfiniteTimeoutGate = new SemaphoreSlim(AppConfig.InfiniteTimeoutMaxConcurrency, AppConfig.InfiniteTimeoutMaxConcurrency);
 
         // Constructor for DI
         public HttpJob(IHttpClientFactory httpClientFactory) : base(new LogUrlModel())
@@ -87,7 +88,10 @@ namespace Blazor.Quartz.Core.Service.Timer
             }
 
             var client = _httpClientFactory?.CreateClient("NoRetryLongRunning") ??
-                         (ServiceLocator.ServiceProvider?.GetService(typeof(IHttpClientFactory)) as IHttpClientFactory)?.CreateClient("NoRetryLongRunning") ?? new HttpClient();
+                         (ServiceLocator.ServiceProvider?.GetService(typeof(IHttpClientFactory)) as IHttpClientFactory)?.CreateClient("NoRetryLongRunning") ?? new HttpClient
+                         {
+                             Timeout = Timeout.InfiniteTimeSpan
+                         };
 
             using (var requestMessage = new HttpRequestMessage())
             {
@@ -131,6 +135,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                 // prepare cancellation token: link job/context token with per-request timeout if configured
                 CancellationToken linkedToken = CancellationToken.None;
                 CancellationTokenSource cts = null;
+                var infiniteTimeoutPermitAcquired = false;
                 try
                 {
                     CancellationToken jobToken = CancellationToken.None;
@@ -145,6 +150,12 @@ namespace Blazor.Quartz.Core.Service.Timer
                     else
                     {
                         linkedToken = jobToken; // no per-request timeout, rely on job cancellation token
+                        infiniteTimeoutPermitAcquired = await InfiniteTimeoutGate.WaitAsync(0, jobToken);
+                        if (!infiniteTimeoutPermitAcquired)
+                        {
+                            await HandleException(context, new InvalidOperationException($"无限超时任务并发数已达到上限 {AppConfig.InfiniteTimeoutMaxConcurrency}，本次执行已跳过"), "并发限制");
+                            return;
+                        }
                     }
 
                     if (!Uri.TryCreate(requestUrl, UriKind.Absolute, out var uri))
@@ -154,7 +165,7 @@ namespace Blazor.Quartz.Core.Service.Timer
                     }
                     try
                     {
-                        response = await client.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, linkedToken);
+                        response = await client.SendAsync(requestMessage, HttpCompletionOption.ResponseContentRead, linkedToken);
                     }
                     catch (HttpRequestException ex)
                     {
@@ -171,7 +182,9 @@ namespace Blazor.Quartz.Core.Service.Timer
                         }
                         else if (jobToken.IsCancellationRequested)
                         {
-                            await HandleException(context, new Exception("任务被取消/调度停止"), "任务取消");
+                            LogInfo.Status = ExecutionStatusEnum.Failure;
+                            LogInfo.ErrorMsg = "<span class='error'>任务被取消/调度停止</span>";
+                            LogInfo.Result = "任务被取消/调度停止";
                         }
                         else
                         {
@@ -189,6 +202,10 @@ namespace Blazor.Quartz.Core.Service.Timer
                 finally
                 {
                     cts?.Dispose();
+                    if (infiniteTimeoutPermitAcquired)
+                    {
+                        InfiniteTimeoutGate.Release();
+                    }
                 }
             }
 
