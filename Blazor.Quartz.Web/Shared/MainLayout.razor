@@ -175,17 +175,25 @@
             var result = JsonConvert.DeserializeObject<BaseResult>(resultJson);
             if (result != null && result.Code == 200)
             {
+                //先恢复按钮状态并关闭弹窗，再短暂展示成功提示（1秒）后跳转登录页，
+                //避免await消息Task（默认3秒）导致按钮/页面空转
+                pwdSubmitting = false;
                 pwdModalVisible = false;
-                await _message.SuccessAsync("密码修改成功，请重新登录");
+                StateHasChanged();
+                await _message.SuccessAsync("密码修改成功，请重新登录", 1);
                 NavigationManager.NavigateTo("/login", true);
             }
             else
             {
+                pwdSubmitting = false;
+                StateHasChanged();
                 await _message.ErrorAsync(result?.Msg ?? "修改密码失败");
             }
         }
         catch (Exception)
         {
+            pwdSubmitting = false;
+            StateHasChanged();
             await _message.ErrorAsync("修改密码失败，请稍后重试");
         }
         finally

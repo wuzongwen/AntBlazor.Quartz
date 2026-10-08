@@ -98,12 +98,18 @@
             {
                 //验证码已被服务端一次性消费，失败后必须换新图
                 RefreshCaptcha();
+                //注意：ErrorAsync返回的Task要等消息自动关闭（默认3秒）后才完成，
+                //需先停止loading并立即重渲染，再展示提示，避免按钮继续空转
+                isLoading = false;
+                StateHasChanged();
                 await _message.ErrorAsync(result?.Msg ?? "登录失败");
             }
         }
         catch (Exception)
         {
             RefreshCaptcha();
+            isLoading = false;
+            StateHasChanged();
             await _message.ErrorAsync("登录失败，请稍后重试");
         }
         finally
