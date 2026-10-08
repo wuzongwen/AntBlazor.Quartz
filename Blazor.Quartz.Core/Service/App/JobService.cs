@@ -37,7 +37,7 @@ namespace Blazor.Quartz.Core.Service.App
         }
 
         /// <summary>
-        /// 获取Job运行状态
+        /// 获取Job运行状态（近12小时内无执行数据的小时返回0，保证看板折线图数据连贯）
         /// </summary>
         /// <returns></returns>
         public async Task<IEnumerable<JobRunningState>> GetJobRunningState()
@@ -49,12 +49,12 @@ namespace Blazor.Quartz.Core.Service.App
                                     )
                                     SELECT
                                         h.HourOfDay,
-	                                    COUNT(*) AS [Count],
+                                        COUNT(j.ID) AS [Count],
                                         COUNT(CASE WHEN j.EXECUTION_STATUS = 0 THEN 1 END) AS CountStatus0,
                                         COUNT(CASE WHEN j.EXECUTION_STATUS = 1 THEN 1 END) AS CountStatus1
                                     FROM Hours h
                                     LEFT JOIN QRTZ_JOB_EXECUTION_LOG j ON DATEPART(HOUR, j.BEGIN_TIME) = h.HourOfDay
-                                    WHERE j.BEGIN_TIME >= DATEADD(HOUR, -12, GETDATE())
+                                        AND j.BEGIN_TIME >= DATEADD(HOUR, -12, GETDATE())
                                     GROUP BY
                                         h.HourOfDay
                                     ORDER BY
@@ -101,7 +101,7 @@ namespace Blazor.Quartz.Core.Service.App
         Task<IEnumerable<JOB_DETAILS>> GetRunningJobList();
 
         /// <summary>
-        /// 获取Job运行状态
+        /// 获取Job运行状态（近12小时内无执行数据的小时返回0，保证看板折线图数据连贯）
         /// </summary>
         /// <returns></returns>
         Task<IEnumerable<JobRunningState>> GetJobRunningState();

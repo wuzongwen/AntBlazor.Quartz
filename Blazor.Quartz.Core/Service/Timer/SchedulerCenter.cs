@@ -752,12 +752,12 @@ namespace Blazor.Quartz.Core.Service.Timer
         }
 
         /// <summary>
-        /// 获取Job运行状态
+        /// 获取Job运行状态（近12小时内无执行数据的小时返回0，保证看板折线图数据连贯）
         /// </summary>
         /// <returns></returns>
         public async Task<IEnumerable<JobRunningState>> GetJobRunningState()
         {
-            var allRunningStatus = await DbContext.QueryAsync<JobRunningState>("WITH Hours AS (SELECT DISTINCT DATEPART(HOUR, DATEADD(HOUR, -number, GETDATE())) AS HourOfDay FROM master.dbo.spt_values WHERE type = 'P' AND number BETWEEN 0 AND 12)SELECT  h.HourOfDay,COUNT(*) AS [Count],  COUNT(CASE WHEN j.EXECUTION_STATUS = 0 THEN 1 END) AS CountStatus0, COUNT(CASE WHEN j.EXECUTION_STATUS = 1 THEN 1 END) AS CountStatus1 FROM Hours h LEFT JOIN QRTZ_JOB_EXECUTION_LOG j ON DATEPART(HOUR, j.BEGIN_TIME) = h.HourOfDay WHERE j.BEGIN_TIME >= DATEADD(HOUR, -12, GETDATE()) GROUP BY    h.HourOfDay ORDER BY    h.HourOfDay");
+            var allRunningStatus = await DbContext.QueryAsync<JobRunningState>("WITH Hours AS (SELECT DISTINCT DATEPART(HOUR, DATEADD(HOUR, -number, GETDATE())) AS HourOfDay FROM master.dbo.spt_values WHERE type = 'P' AND number BETWEEN 0 AND 12)SELECT  h.HourOfDay,COUNT(j.ID) AS [Count],  COUNT(CASE WHEN j.EXECUTION_STATUS = 0 THEN 1 END) AS CountStatus0, COUNT(CASE WHEN j.EXECUTION_STATUS = 1 THEN 1 END) AS CountStatus1 FROM Hours h LEFT JOIN QRTZ_JOB_EXECUTION_LOG j ON DATEPART(HOUR, j.BEGIN_TIME) = h.HourOfDay AND j.BEGIN_TIME >= DATEADD(HOUR, -12, GETDATE()) GROUP BY    h.HourOfDay ORDER BY    h.HourOfDay");
             return allRunningStatus;
         }
     }
