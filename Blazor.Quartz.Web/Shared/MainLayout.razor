@@ -60,7 +60,7 @@
        MaskClosable="false"
        OnOk="HandleChangePassword"
        OnCancel="ClosePwdModal">
-    <Form Model="pwdModel">
+    <Form Model="pwdModel" LabelColSpan="6" WrapperColSpan="18">
         <FormItem Label="原密码">
             <InputPassword @bind-Value="pwdModel.OLD_PASSWORD" Placeholder="请输入原密码" />
         </FormItem>

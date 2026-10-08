@@ -27,7 +27,8 @@ namespace Blazor.Quartz.Web.Controllers
     /// </summary>
     [Route("[controller]/[Action]")]
     [EnableCors("AllowSameDomain")] //允许跨域 
-    [Authorize]
+    //调度内部接口（心跳检查/每日报表/清理日志），由定时任务或外部调度器调用，不校验登录状态
+    [AllowAnonymous]
     public class WorkController : Controller
     {
         private readonly IHttpClientFactory _httpClientFactory;
