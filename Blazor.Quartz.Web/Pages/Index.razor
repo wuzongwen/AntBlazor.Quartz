@@ -246,8 +246,8 @@
         hour24count = jobRunningState.Sum(o => o.Count);
         for (DateTime i = start_time; i <= end_time; i = i.AddHours(1))
         {
-            data.Add(new { hours = i.ToString("HH"), 数量 = jobRunningState.Where(o => o.HourOfDay == i.Hour).FirstOrDefault()?.CountStatus1 ?? 0, type = "Success" });
-            data.Add(new { hours = i.ToString("HH"), 数量 = jobRunningState.Where(o => o.HourOfDay == i.Hour).FirstOrDefault()?.CountStatus0 ?? 0, type = "Failure" });
+            data.Add(new { hours = i.ToString("HH"), 数量 = jobRunningState.Where(o => o.HourOfDay == i.Hour).FirstOrDefault()?.CountStatus1, type = "Success" });
+            data.Add(new { hours = i.ToString("HH"), 数量 = jobRunningState.Where(o => o.HourOfDay == i.Hour).FirstOrDefault()?.CountStatus0, type = "Failure" });
         }
         isshow = true;
     }

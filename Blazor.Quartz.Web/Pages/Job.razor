@@ -176,7 +176,7 @@
         try
         {
             //获取应用列表
-            var appInfoListRes = await appservice.GetList(new QueryModel());
+            var appInfoListRes = await appservice.GetList(new QueryModel() { IS_ENABLE = AppStatusEnum.Enable });
             appInfoList = appInfoListRes.Data;
 
             //var response = await Http.GetAsync($"${Configuration["ApiUri"]}/api/file/getlist?name={queryDto.Name}");

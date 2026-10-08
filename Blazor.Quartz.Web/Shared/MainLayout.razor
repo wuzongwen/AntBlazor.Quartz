@@ -2,7 +2,10 @@
 @inject NotificationService _notice
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
+@inject MessageService _message
 @using Blazor.Quartz.Core.Service.Timer.Dto
+@using Blazor.Quartz.Core.Service.Admin.Dto
+@using Blazor.Quartz.Core.Service.Base.Dto
 
 <div class="sidebar">
     <NavMenu />
@@ -23,6 +26,10 @@
                             <span style="margin-left: 8px">项目主页</span>
                         </li>
                         <li class="ant-dropdown-menu-item-divider" role="separator" aria-orientation="horizontal"></li>
+                        <li class="ant-dropdown-menu-item" @onclick="OpenChangePasswordModal">
+                            <Icon Type="key" Theme="@IconThemeType.Outline" />
+                            <span style="margin-left: 8px">修改密码</span>
+                        </li>
                         <li class="ant-dropdown-menu-item" @onclick="OnLogout">
                             <Icon Type="logout" Theme="@IconThemeType.Outline" />
                             <span style="margin-left: 8px">退出登录</span>
@@ -44,6 +51,28 @@
         @Body
     </div>
 </div>
+
+<Modal Title="修改密码"
+       Visible="@pwdModalVisible"
+       ConfirmLoading="@pwdSubmitting"
+       OkText='@("确定")'
+       CancelText='@("取消")'
+       MaskClosable="false"
+       OnOk="HandleChangePassword"
+       OnCancel="ClosePwdModal">
+    <Form Model="pwdModel">
+        <FormItem Label="原密码">
+            <InputPassword @bind-Value="pwdModel.OLD_PASSWORD" Placeholder="请输入原密码" />
+        </FormItem>
+        <FormItem Label="新密码">
+            <InputPassword @bind-Value="pwdModel.NEW_PASSWORD" Placeholder="请输入新密码（6-32位）" />
+        </FormItem>
+        <FormItem Label="确认新密码">
+            <InputPassword @bind-Value="pwdModel.CONFIRM_PASSWORD" Placeholder="请再次输入新密码" OnPressEnter="HandleChangePassword" />
+        </FormItem>
+    </Form>
+</Modal>
+
 @code {
     //protected override async Task OnInitializedAsync()
     //{
@@ -86,5 +115,82 @@
         }
         catch { }
         NavigationManager.NavigateTo("/login", true);
+    }
+
+    private ChangePasswordDto pwdModel = new ChangePasswordDto();
+    private bool pwdModalVisible = false;
+    private bool pwdSubmitting = false;
+
+    /// <summary>
+    /// 打开修改密码弹窗
+    /// </summary>
+    private void OpenChangePasswordModal()
+    {
+        pwdModel = new ChangePasswordDto();
+        pwdModalVisible = true;
+    }
+
+    /// <summary>
+    /// 关闭修改密码弹窗并清空表单
+    /// </summary>
+    private void ClosePwdModal()
+    {
+        pwdModalVisible = false;
+        pwdModel = new ChangePasswordDto();
+    }
+
+    /// <summary>
+    /// 提交修改密码（成功后服务端已清除登录Cookie，整页跳转登录页重新登录）
+    /// </summary>
+    /// <returns></returns>
+    private async Task HandleChangePassword()
+    {
+        //前端基础校验，完整规则由服务端统一校验
+        if (string.IsNullOrWhiteSpace(pwdModel.OLD_PASSWORD)
+            || string.IsNullOrWhiteSpace(pwdModel.NEW_PASSWORD)
+            || string.IsNullOrWhiteSpace(pwdModel.CONFIRM_PASSWORD))
+        {
+            await _message.ErrorAsync("请填写完整的密码信息");
+            return;
+        }
+
+        if (pwdModel.NEW_PASSWORD.Length < 6 || pwdModel.NEW_PASSWORD.Length > 32)
+        {
+            await _message.ErrorAsync("新密码长度需在6-32位之间");
+            return;
+        }
+
+        if (pwdModel.NEW_PASSWORD != pwdModel.CONFIRM_PASSWORD)
+        {
+            await _message.ErrorAsync("两次输入的新密码不一致");
+            return;
+        }
+
+        pwdSubmitting = true;
+        try
+        {
+            //由浏览器发起同源请求携带登录Cookie调用修改密码接口
+            var json = JsonConvert.SerializeObject(pwdModel);
+            var resultJson = await JS.InvokeAsync<string>("loginManager.postJson", "/api/Login/ChangePassword", json);
+            var result = JsonConvert.DeserializeObject<BaseResult>(resultJson);
+            if (result != null && result.Code == 200)
+            {
+                pwdModalVisible = false;
+                await _message.SuccessAsync("密码修改成功，请重新登录");
+                NavigationManager.NavigateTo("/login", true);
+            }
+            else
+            {
+                await _message.ErrorAsync(result?.Msg ?? "修改密码失败");
+            }
+        }
+        catch (Exception)
+        {
+            await _message.ErrorAsync("修改密码失败，请稍后重试");
+        }
+        finally
+        {
+            pwdSubmitting = false;
+        }
     }
 }

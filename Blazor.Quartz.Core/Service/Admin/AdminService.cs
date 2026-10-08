@@ -130,6 +130,89 @@ VALUES(@USERNAME,@PASSWORD,@SALT,@REAL_NAME,1)",
         }
 
         /// <summary>
+        /// 修改登录密码（校验原密码后，生成新盐并更新密码哈希）
+        /// </summary>
+        /// <param name="adminId">管理员ID（取自当前登录身份）</param>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public async Task<BaseResult> ChangePasswordAsync(int adminId, ChangePasswordDto model)
+        {
+            BaseResult result = new BaseResult();
+            try
+            {
+                if (model == null || string.IsNullOrWhiteSpace(model.OLD_PASSWORD)
+                    || string.IsNullOrWhiteSpace(model.NEW_PASSWORD)
+                    || string.IsNullOrWhiteSpace(model.CONFIRM_PASSWORD))
+                {
+                    result.Code = -1;
+                    result.Msg = "请填写完整的密码信息";
+                    return result;
+                }
+
+                if (model.NEW_PASSWORD.Length < 6 || model.NEW_PASSWORD.Length > 32)
+                {
+                    result.Code = -1;
+                    result.Msg = "新密码长度需在6-32位之间";
+                    return result;
+                }
+
+                if (model.NEW_PASSWORD != model.CONFIRM_PASSWORD)
+                {
+                    result.Code = -1;
+                    result.Msg = "两次输入的新密码不一致";
+                    return result;
+                }
+
+                var admin = await DbContext.QueryFirstOrDefaultAsync<AdminEntity>(
+                    $"SELECT * FROM {AdminConstant.TableName} WHERE ID=@ID", new { ID = adminId });
+
+                if (admin == null)
+                {
+                    result.Code = -1;
+                    result.Msg = "管理员账号不存在";
+                    return result;
+                }
+
+                if (admin.IS_ENABLE != 1)
+                {
+                    result.Code = -1;
+                    result.Msg = "该账号已被禁用";
+                    return result;
+                }
+
+                if (!VerifyPassword(model.OLD_PASSWORD, admin.SALT, admin.PASSWORD))
+                {
+                    result.Code = -1;
+                    result.Msg = "原密码错误";
+                    return result;
+                }
+
+                if (model.OLD_PASSWORD == model.NEW_PASSWORD)
+                {
+                    result.Code = -1;
+                    result.Msg = "新密码不能与原密码相同";
+                    return result;
+                }
+
+                //修改成功后换用新盐重新计算哈希，避免沿用旧盐
+                var newSalt = GenerateSalt();
+                var newPasswordHash = HashPassword(model.NEW_PASSWORD, newSalt);
+                await DbContext.ExecuteAsync(
+                    $"UPDATE {AdminConstant.TableName} SET PASSWORD=@PASSWORD, SALT=@SALT WHERE ID=@ID",
+                    new { PASSWORD = newPasswordHash, SALT = newSalt, ID = adminId });
+
+                result.Msg = "密码修改成功";
+            }
+            catch (Exception ex)
+            {
+                result.Code = -1;
+                result.Msg = "修改密码失败";
+                Log.Error(ex, ex.Message);
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 生成随机盐
         /// </summary>
         /// <returns></returns>
@@ -190,5 +273,13 @@ VALUES(@USERNAME,@PASSWORD,@SALT,@REAL_NAME,1)",
         /// <param name="model"></param>
         /// <returns></returns>
         Task<BaseResult<AdminInfo>> Login(LoginDto model);
+
+        /// <summary>
+        /// 修改登录密码
+        /// </summary>
+        /// <param name="adminId">管理员ID（取自当前登录身份）</param>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        Task<BaseResult> ChangePasswordAsync(int adminId, ChangePasswordDto model);
     }
 }

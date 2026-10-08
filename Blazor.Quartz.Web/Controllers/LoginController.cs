@@ -76,6 +76,33 @@ namespace Blazor.Quartz.Web.Controllers
         }
 
         /// <summary>
+        /// 修改登录密码（校验原密码并更新，成功后使当前登录态失效，需重新登录）
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto model)
+        {
+            //从当前登录身份中取管理员ID，避免信任客户端传参
+            var adminId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+            if (adminId <= 0)
+            {
+                return Json(new BaseResult { Code = -1, Msg = "登录信息已失效，请重新登录" });
+            }
+
+            var changeResult = await _adminService.ChangePasswordAsync(adminId, model);
+            if (changeResult.Code != 200)
+            {
+                return Json(new BaseResult { Code = changeResult.Code, Msg = changeResult.Msg });
+            }
+
+            //密码已变更，清除Cookie强制重新登录，避免旧会话继续持有凭据
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return Json(new BaseResult { Msg = "密码修改成功，请重新登录" });
+        }
+
+        /// <summary>
         /// 退出登录（清除Cookie）
         /// </summary>
         /// <returns></returns>
