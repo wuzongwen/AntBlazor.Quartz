@@ -52,7 +52,7 @@
         }
         catch (Exception ex)
         {
-            await _message.Error(ex.Message);
+            await _message.ErrorAsync(ex.Message);
         }
     }
 

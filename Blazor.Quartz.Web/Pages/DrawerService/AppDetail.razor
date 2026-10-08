@@ -8,7 +8,7 @@
 @inject ProtectedLocalStorage localstorage
 @inject MessageService _message
 
-<Form @ref="form" layout="vertical" Model="@model"
+<Form @ref="form" Layout="@FormLayout.Vertical" Model="@model"
       OnFinish="OnFinish"
       OnFinishFailed="OnFinishFailed"
       ValidateOnChange="true">
@@ -70,7 +70,7 @@
             var data = await appservice.GetModel(new AppInfo() { JOB_GROUP_NAME = value });
             if (data.Code != 200)
             {
-                await _message.Error(data.Msg);
+                await _message.ErrorAsync(data.Msg);
                 this.OnClose();
             }
         }
@@ -118,7 +118,7 @@
         }
         else
         {
-            await _message.Error(res.Msg);
+            await _message.ErrorAsync(res.Msg);
         }
     }
 

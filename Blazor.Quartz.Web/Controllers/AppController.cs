@@ -1,5 +1,6 @@
 ﻿using Blazor.Quartz.Common;
 using Blazor.Quartz.Core.Service.App;
+using Microsoft.AspNetCore.Authorization;
 using Blazor.Quartz.Core.Service.App.Dto;
 using Blazor.Quartz.Core.Service.Base.Dto;
 using Dapper;
@@ -18,6 +19,7 @@ namespace Blazor.Quartz.Web.Controllers
     /// </summary>
     [Route("api/[controller]/[Action]")]
     [EnableCors("AllowSameDomain")] //允许跨域 
+    [Authorize]
     public class AppController : Controller
     {
         private readonly IAppService _appService;

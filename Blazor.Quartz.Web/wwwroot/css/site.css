@@ -1,4 +1,4 @@
-@import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
+﻿@import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
 
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -180,4 +180,176 @@ app {
         /* Never collapse the sidebar for wide screens */
         display: block;
     }
+}
+
+.user-dropdown-trigger {
+    margin-left: auto;
+    color: #000000;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+/* 登录页：PC 大屏固定宽度卡片，移动端自适应。 */
+.login-page {
+    /* width:100%：_Host 的 <app> 元素被设为 flex 容器，不加会 shrink-to-fit 导致整页收缩 */
+    width: 100%;
+    /* dvh：移动端浏览器地址栏收起/展开时动态视口高度，避免底部被遮挡；不支持时回退 vh */
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    padding: 24px 16px;
+    box-sizing: border-box;
+    background: linear-gradient(135deg, rgb(5, 39, 103) 0%, #3a0647 100%);
+    background-attachment: fixed;
+}
+
+.login-panel {
+    /* margin:auto 代替 align-items:center：内容超过视口高度时可正常滚动，顶部不会被裁切 */
+    margin: auto;
+    width: 100%;
+    max-width: 380px;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.login-logo {
+    font-size: 36px;
+    color: #fff;
+}
+
+.login-title {
+    color: #fff;
+    margin: 12px 0 4px;
+}
+
+.login-subtitle {
+    color: rgba(255,255,255,0.65);
+    margin: 0;
+}
+
+/* 提高特异性（.login-page 前缀），避免被后加载的 AntDesign .ant-card 默认 border-radius:2px 覆盖 */
+.login-page .login-card {
+    border-radius: 8px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+
+/* 图形验证码行：输入框与图形码并排，点图形可刷新 */
+.login-captcha-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+    /* 覆盖 antd .ant-input 的 width:100%，改为弹性伸缩让出图形位置 */
+    .login-captcha-row .ant-input {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+    }
+
+.login-captcha-img {
+    flex: none;
+    width: 110px;
+    height: 40px;
+    cursor: pointer;
+    border-radius: 2px;
+    overflow: hidden;
+    background: #f2f4f7;
+}
+
+    .login-captcha-img svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+/* 手机竖屏：缩小图标/标题/卡片留白，输入框加高到 40px 保证触摸目标，
+   字号 16px 防止 iOS Safari 聚焦输入框时自动放大页面 */
+@media (max-width: 480px) {
+    .login-page {
+        padding: 16px 12px;
+    }
+
+    .login-header {
+        margin-bottom: 12px;
+    }
+
+    .login-logo {
+        font-size: 30px;
+    }
+
+    .login-title {
+        font-size: 20px;
+        margin: 8px 0 2px;
+    }
+
+    .login-page .login-card {
+        border-radius: 6px;
+    }
+
+    .login-page .login-card .ant-card-body {
+        padding: 16px;
+    }
+
+    .login-page .login-card .ant-input,
+    .login-page .login-card .ant-input-affix-wrapper {
+        min-height: 40px;
+        font-size: 16px;
+    }
+
+    .login-page .login-card .ant-input-affix-wrapper > input.ant-input {
+        min-height: auto;
+        font-size: 16px;
+    }
+
+    .login-page .login-card .ant-btn {
+        min-height: 40px;
+        font-size: 16px;
+    }
+}
+
+/* 手机横屏等矮视口：压缩头部留白，表单区域可滚动 */
+@media (max-height: 500px) and (orientation: landscape) {
+    .login-page {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+
+    .login-header {
+        margin-bottom: 8px;
+    }
+
+    .login-logo {
+        font-size: 24px;
+    }
+
+    .login-title {
+        font-size: 18px;
+        margin: 4px 0 2px;
+    }
+}
+
+
+/* AntDesign 1.6.2 Space 组件 bug 兜底：Size 枚举被直接写成 style='column-gap:middle'（非法 CSS 值被浏览器丢弃），
+   导致表格操作列等处按钮间距失效挤在一起。此处补齐合法间距（small 8px / large 24px 按 antd 规范，middle 按项目要求用 20px）。
+   不加 !important：若组件将来修复为 inline 合法值，将自动接管本规则。 */
+.ant-space[style*='column-gap:small'] {
+    column-gap: 8px;
+    row-gap: 8px;
+}
+
+.ant-space[style*='column-gap:middle'] {
+    column-gap: 5px;
+    row-gap: 5px;
+}
+
+.ant-space[style*='column-gap:large'] {
+    column-gap: 24px;
+    row-gap: 24px;
 }

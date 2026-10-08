@@ -1,4 +1,5 @@
 ﻿@page "/application"
+@attribute [Authorize]
 @using Blazor.Quartz.Core.Service.App
 @using Blazor.Quartz.Core.Service.App.Dto
 @using Blazor.Quartz.Core.Service.App.Enum;
@@ -24,7 +25,7 @@
         <Button Type="@ButtonType.Primary" OnClick="AddApplication">添加应用</Button>
     </PageHeaderExtra>
 </PageHeader>
-<Table DataSource="@tableModel" Bordered=@true Loading="@isLoading" Size=@TableSize.Middle>
+<Table DataSource="@tableModel" Bordered=@true Loading="@isLoading" Size=@TableSize.Middle HidePagination="@(tableModel == null || tableModel.Count == 0)">
     <Column @bind-Field="@context.JOB_GROUP_NAME"></Column>
     <Column @bind-Field="@context.DESCRIPTION" Ellipsis></Column>
     <Column @bind-Field="@context.IS_ENABLE" Ellipsis>
@@ -46,11 +47,11 @@
                             OnCancel="Cancel"
                             OkText="是"
                             CancelText="否">
-                                <Button Type="primary" Danger>停用</Button>
+                                <Button Type="@ButtonType.Primary" Danger>停用</Button>
                             </Popconfirm>
                             break;
                         case AppStatusEnum.Disable:
-                            <Button Type="primary" Block OnClick="@(()=>Pause(context.JOB_GROUP_NAME,context.IS_ENABLE))">
+                            <Button Type="@ButtonType.Primary" Block OnClick="@(()=>Pause(context.JOB_GROUP_NAME,context.IS_ENABLE))">
                                 启用
                             </Button>
                             break;
@@ -58,7 +59,7 @@
                 }
             </SpaceItem>
             <SpaceItem>
-                <Button Type="primary" Danger OnClick="@(()=>Delete(context.JOB_GROUP_NAME))">
+                <Button Type="@ButtonType.Primary" Danger OnClick="@(()=>Delete(context.JOB_GROUP_NAME))">
                     删除
                 </Button>
             </SpaceItem>
@@ -89,7 +90,7 @@
             //}
             //else
             //{
-            //await _message.Error("系统繁忙请稍后重试");
+            //await _message.ErrorAsync("系统繁忙请稍后重试");
             //}
             await LoadTable();
 
@@ -97,7 +98,7 @@
         }
         catch (Exception ex)
         {
-            await _message.Error(ex.Message);
+            await _message.ErrorAsync(ex.Message);
         }
 
     }
@@ -119,7 +120,7 @@
         var options = new DrawerOptions()
         {
             Title = "新增应用",
-            Width = 350,
+            Width = "350",
         };
 
         var drawerRef = await DrawerService.CreateAsync<AppDetail, string, string>(options, value);
@@ -166,11 +167,11 @@
         if (res.Code == 200)
         {
             await LoadTable();
-            await _message.Success(res.Msg, 0.5);
+            await _message.SuccessAsync(res.Msg, 0.5);
         }
         else
         {
-            await _message.Error(res.Msg);
+            await _message.ErrorAsync(res.Msg);
         }
     }
 
@@ -189,11 +190,11 @@
         if (res.Code == 200)
         {
             await LoadTable();
-            await _message.Success(res.Msg, 0.5);
+            await _message.SuccessAsync(res.Msg, 0.5);
         }
         else
         {
-            await _message.Error(res.Msg);
+            await _message.ErrorAsync(res.Msg);
         }
     }
 
@@ -210,7 +211,7 @@
         }
         else
         {
-            await _message.Error(res.Msg);
+            await _message.ErrorAsync(res.Msg);
         }
     }
 
@@ -219,6 +220,6 @@
     /// </summary>
     private void Cancel()
     {
-        //_message.Error("Clicked on No");
+        //await _message.ErrorAsync("Clicked on No");
     }
 }

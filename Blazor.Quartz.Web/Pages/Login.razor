@@ -1,0 +1,114 @@
+@page "/login"
+@layout LoginLayout
+@using Blazor.Quartz.Core.Service.Admin.Dto
+@using Blazor.Quartz.Core.Service.Base.Dto
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject MessageService _message
+@inject Blazor.Quartz.Web.Services.ICaptchaService CaptchaService
+
+<div class="login-header">
+    <Icon Type="schedule" Theme="@IconThemeType.Outline" class="login-logo" style="color:#ffffff" />
+    <h2 class="login-title">任务调度平台</h2>
+</div>
+<Card class="login-card">
+    <Form Model="loginModel">
+        <FormItem Label="用户名">
+            <Input @bind-Value="loginModel.USERNAME" Placeholder="请输入用户名" AllowClear />
+        </FormItem>
+        <FormItem Label="密　码">
+            <InputPassword @bind-Value="loginModel.PASSWORD" Placeholder="请输入密码" OnPressEnter="HandleLogin" />
+        </FormItem>
+        <FormItem Label="验证码">
+            <div class="login-captcha-row">
+                <Input @bind-Value="loginModel.CAPTCHA_CODE" Placeholder="请输入验证码" OnPressEnter="HandleLogin" />
+                <div class="login-captcha-img" title="点击刷新验证码" @onclick="RefreshCaptcha">
+                    @((MarkupString)captchaSvg)
+                </div>
+            </div>
+        </FormItem>
+        <FormItem>
+            <Button Type="@ButtonType.Primary" Style="width: 100%" Loading="@isLoading" OnClick="HandleLogin">登 录</Button>
+        </FormItem>
+    </Form>
+</Card>
+
+@code {
+    private LoginDto loginModel = new LoginDto();
+    private bool isLoading = false;
+    private string captchaSvg = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //已登录则直接进入首页
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity.IsAuthenticated)
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        //生成图形验证码
+        RefreshCaptcha();
+    }
+
+    /// <summary>
+    /// 刷新图形验证码（生成新图并同步验证码ID）
+    /// </summary>
+    private void RefreshCaptcha()
+    {
+        var captcha = CaptchaService.Generate();
+        captchaSvg = captcha.Svg;
+        loginModel.CAPTCHA_ID = captcha.CaptchaId;
+        loginModel.CAPTCHA_CODE = string.Empty;
+    }
+
+    /// <summary>
+    /// 登录
+    /// </summary>
+    /// <returns></returns>
+    private async Task HandleLogin()
+    {
+        if (string.IsNullOrWhiteSpace(loginModel.USERNAME) || string.IsNullOrWhiteSpace(loginModel.PASSWORD))
+        {
+            await _message.ErrorAsync("请输入用户名和密码");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(loginModel.CAPTCHA_CODE))
+        {
+            await _message.ErrorAsync("请输入验证码");
+            return;
+        }
+
+        isLoading = true;
+        try
+        {
+            //由浏览器发起登录请求，使登录Cookie写入浏览器
+            var json = JsonConvert.SerializeObject(loginModel);
+            var resultJson = await JS.InvokeAsync<string>("loginManager.postJson", "/api/Login/In", json);
+            var result = JsonConvert.DeserializeObject<BaseResult>(resultJson);
+            if (result != null && result.Code == 200)
+            {
+                //整页刷新以携带登录Cookie重新建立Blazor连接
+                NavigationManager.NavigateTo("/", true);
+            }
+            else
+            {
+                //验证码已被服务端一次性消费，失败后必须换新图
+                RefreshCaptcha();
+                await _message.ErrorAsync(result?.Msg ?? "登录失败");
+            }
+        }
+        catch (Exception)
+        {
+            RefreshCaptcha();
+            await _message.ErrorAsync("登录失败，请稍后重试");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

@@ -10,7 +10,7 @@
 @inject SchedulerCenter scheduler
 @inject IAppService appservice
 
-<Form @ref="form" layout="vertical" Model="@model"
+<Form @ref="form" Layout="@FormLayout.Vertical" Model="@model"
       OnFinish="OnFinish"
       OnFinishFailed="OnFinishFailed"
       ValidateOnChange="true">
@@ -91,8 +91,9 @@
                     break;
             }
         }
-        <FormItem Label="超时时长(单位秒)" Extra="留空使用系统默认值；0表示无限长；超过1800秒可能长期占用执行资源">
+        <FormItem Label="超时时长(单位秒)">
             <AntDesign.InputNumber @bind-Value="@model.TimeOut" Placeholder="留空默认3600秒，0表示无限长" OnChange="TimeOutOnChange" TValue="int?" Min="0" Max="864000"></AntDesign.InputNumber>
+            <div style="color: rgba(0,0,0,0.45); font-size: 12px; line-height: 1.5;">留空使用系统默认值；0表示无限长；超过1800秒可能长期占用执行资源</div>
         </FormItem>
         @if (showTimeoutRisk)
         {
@@ -196,12 +197,12 @@
             if (appInfoList == null || appInfoList.Count() < 1)
             {
                 OnClose();
-                await _message.Error("请先添加应用");
+                await _message.ErrorAsync("请先添加应用");
             }
         }
         catch (Exception ex)
         {
-            await _message.Error(ex.Message);
+            await _message.ErrorAsync(ex.Message);
         }
 
         isInitializing = false;
@@ -283,7 +284,7 @@
         }
         else
         {
-            await _message.Error(res.Msg);
+            await _message.ErrorAsync(res.Msg);
         }
     }
 

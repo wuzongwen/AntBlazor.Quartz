@@ -1,5 +1,6 @@
 ﻿using Blazor.Quartz.Common.DingTalkRobot.Robot;
 using Blazor.Quartz.Common;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using System;
@@ -26,6 +27,7 @@ namespace Blazor.Quartz.Web.Controllers
     /// </summary>
     [Route("[controller]/[Action]")]
     [EnableCors("AllowSameDomain")] //允许跨域 
+    [Authorize]
     public class WorkController : Controller
     {
         private readonly IHttpClientFactory _httpClientFactory;

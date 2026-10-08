@@ -1,6 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @inject NotificationService _notice
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
 @using Blazor.Quartz.Core.Service.Timer.Dto
 
 <div class="sidebar">
@@ -9,12 +10,34 @@
 
 <div class="main">
     <div class="top-row px-4">
-        <Button Type="@ButtonType.Link" OnClick="@OnClick">
-            约定返回模型
-        </Button>
-        <Button Type="@ButtonType.Link" OnClick="@OnClick2">
-            项目主页
-        </Button>
+        <AuthorizeView>
+            <Dropdown>
+                <Overlay>
+                    <ul class="ant-dropdown-menu ant-dropdown-menu-root">
+                        <li class="ant-dropdown-menu-item" @onclick="OnClick">
+                            <Icon Type="info-circle" Theme="@IconThemeType.Outline" />
+                            <span style="margin-left: 8px">约定返回模型</span>
+                        </li>
+                        <li class="ant-dropdown-menu-item" @onclick="OnClick2">
+                            <Icon Type="home" Theme="@IconThemeType.Outline" />
+                            <span style="margin-left: 8px">项目主页</span>
+                        </li>
+                        <li class="ant-dropdown-menu-item-divider" role="separator" aria-orientation="horizontal"></li>
+                        <li class="ant-dropdown-menu-item" @onclick="OnLogout">
+                            <Icon Type="logout" Theme="@IconThemeType.Outline" />
+                            <span style="margin-left: 8px">退出登录</span>
+                        </li>
+                    </ul>
+                </Overlay>
+                <ChildContent>
+                    <span class="user-dropdown-trigger">
+                        <Icon Type="user" Theme="@IconThemeType.Outline" />
+                        @context.User.Identity?.Name
+                        <Icon Type="down" Theme="@IconThemeType.Outline" />
+                    </span>
+                </ChildContent>
+            </Dropdown>
+        </AuthorizeView>
     </div>
 
     <div class="content px-4">
@@ -49,5 +72,19 @@
                 Duration = 5.5,
                 Description = "https://github.com/wuzongwen/AntBlazor.Quartz"
             });
+    }
+
+    /// <summary>
+    /// 退出登录（清除登录Cookie后回到登录页）
+    /// </summary>
+    /// <returns></returns>
+    private async Task OnLogout()
+    {
+        try
+        {
+            await JS.InvokeAsync<string>("loginManager.postJson", "/api/Login/Out", "{}");
+        }
+        catch { }
+        NavigationManager.NavigateTo("/login", true);
     }
 }

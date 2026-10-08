@@ -1,5 +1,6 @@
-using Blazor.Quartz.Common.PollyClient;
+ï»¿using Blazor.Quartz.Common.PollyClient;
 using Blazor.Quartz.Core.Hubs;
+using Blazor.Quartz.Core.Service.Admin;
 using Blazor.Quartz.Core.Service.App;
 using Blazor.Quartz.Core.Service.Timer;
 using Blazor.Quartz.Web.Extensions;
@@ -43,13 +44,13 @@ namespace Blazor.Quartz.Web
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            //ĞÄÌø¼ì²é
+            //å¿ƒè·³æ£€æŸ¥
             services.AddHealthChecks();
 
-            // ÈÕÖ¾ÅäÖÃ
+            // æ—¥å¿—é…ç½®
             LogConfig();
 
-            #region ¿çÓò     
+            #region è·¨åŸŸ     
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowSameDomain", policyBuilder =>
@@ -60,29 +61,50 @@ namespace Blazor.Quartz.Web
 
                     var allowedHosts = Configuration.GetSection("AllowedHosts").Get<List<string>>();
                     if (allowedHosts?.Any(t => t == "*") ?? false)
-                        policyBuilder.AllowAnyOrigin(); //ÔÊĞíÈÎºÎÀ´Ô´µÄÖ÷»ú·ÃÎÊ
+                        policyBuilder.AllowAnyOrigin(); //å…è®¸ä»»ä½•æ¥æºçš„ä¸»æœºè®¿é—®
                     else if (allowedHosts?.Any() ?? false)
-                        policyBuilder.AllowCredentials().WithOrigins(allowedHosts.ToArray()); //ÔÊĞíÀàËÆhttp://localhost:8080µÈÖ÷»ú·ÃÎÊ
+                        policyBuilder.AllowCredentials().WithOrigins(allowedHosts.ToArray()); //å…è®¸ç±»ä¼¼http://localhost:8080ç­‰ä¸»æœºè®¿é—®
                 });
             });
             #endregion
 
-            //×¢²áAntDesign×é¼ş
+            //æ³¨å†ŒAntDesignç»„ä»¶
             services.AddAntDesign();
 
-            //×¢ÈëSignalRÊµÊ±Í¨Ñ¶£¬Ä¬ÈÏÓÃjson´«Êä
+            //æ³¨å…¥SignalRå®æ—¶é€šè®¯ï¼Œé»˜è®¤ç”¨jsonä¼ è¾“
             services.AddSignalR(options =>
             {
-                //¿Í»§¶Ë·¢±£³ÖÁ¬½ÓÇëÇóµ½·şÎñ¶Ë×î³¤¼ä¸ô£¬Ä¬ÈÏ30Ãë£¬¸Ä³É4·ÖÖÓ£¬ÍøÒ³Ğè¸ú×ÅÉèÖÃconnection.keepAliveIntervalInMilliseconds = 12e4;¼´2·ÖÖÓ
+                //å®¢æˆ·ç«¯å‘ä¿æŒè¿æ¥è¯·æ±‚åˆ°æœåŠ¡ç«¯æœ€é•¿é—´éš”ï¼Œé»˜è®¤30ç§’ï¼Œæ”¹æˆ4åˆ†é’Ÿï¼Œç½‘é¡µéœ€è·Ÿç€è®¾ç½®connection.keepAliveIntervalInMilliseconds = 12e4;å³2åˆ†é’Ÿ
                 //options.ClientTimeoutInterval = TimeSpan.FromMinutes(4);
-                //·şÎñ¶Ë·¢±£³ÖÁ¬½ÓÇëÇóµ½¿Í»§¶Ë¼ä¸ô£¬Ä¬ÈÏ15Ãë£¬¸Ä³É2·ÖÖÓ£¬ÍøÒ³Ğè¸ú×ÅÉèÖÃconnection.serverTimeoutInMilliseconds = 24e4;¼´4·ÖÖÓ
+                //æœåŠ¡ç«¯å‘ä¿æŒè¿æ¥è¯·æ±‚åˆ°å®¢æˆ·ç«¯é—´éš”ï¼Œé»˜è®¤15ç§’ï¼Œæ”¹æˆ2åˆ†é’Ÿï¼Œç½‘é¡µéœ€è·Ÿç€è®¾ç½®connection.serverTimeoutInMilliseconds = 24e4;å³4åˆ†é’Ÿ
                 //options.KeepAliveInterval = TimeSpan.FromMinutes(2);
             });
 
-            //×¢²áCookieÈÏÖ¤·şÎñ
-            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
+            //æ³¨å†ŒCookieè®¤è¯æœåŠ¡ï¼ˆç™»å½•çŠ¶æ€ä¿å­˜8å°æ—¶ï¼Œæ»‘åŠ¨è¿‡æœŸï¼‰
+            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
+            {
+                options.Cookie.Name = "Blazor.Quartz.Auth";
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SameSite = SameSiteMode.Lax;
+                options.ExpireTimeSpan = TimeSpan.FromHours(8);
+                options.SlidingExpiration = true;
+                //APIæ¥å£æœªç™»å½•æ—¶ç›´æ¥è¿”å›401/403çŠ¶æ€ç ï¼Œè€Œä¸æ˜¯302é‡å®šå‘
+                options.Events = new CookieAuthenticationEvents
+                {
+                    OnRedirectToLogin = context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        return Task.CompletedTask;
+                    },
+                    OnRedirectToAccessDenied = context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        return Task.CompletedTask;
+                    }
+                };
+            });
 
-            //JsonÖĞÎÄ
+            //Jsonä¸­æ–‡
             services.AddControllers().AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.All);
@@ -93,7 +115,7 @@ namespace Blazor.Quartz.Web
                 opt.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All);
             });
 
-            ////×¢ÈëPollyÖØÊÔ·şÎñ
+            ////æ³¨å…¥Pollyé‡è¯•æœåŠ¡
             //services.AddSingleton<Policies>();
 
             //// Register PolicyHandler and configure named HttpClient that uses it
@@ -124,15 +146,17 @@ namespace Blazor.Quartz.Web
             // register ServiceProviderJobFactory so SchedulerCenter can set JobFactory
             services.AddSingleton<ServiceProviderJobFactory>();
 
-            //×¢ÈëÈÎÎñµ÷¶È using DI-provided IServiceProvider
+            //æ³¨å…¥ä»»åŠ¡è°ƒåº¦ using DI-provided IServiceProvider
             services.AddSingleton<SchedulerCenter>(sp => new SchedulerCenter(sp));
-            //×¢ÈëÈÎÎñµ÷¶È£¨HostedService should be added after SchedulerCenter registration to ensure DI instance is used£©
+            //æ³¨å…¥ä»»åŠ¡è°ƒåº¦ï¼ˆHostedService should be added after SchedulerCenter registration to ensure DI instance is usedï¼‰
             services.AddHostedService<QuartzService>();
 
-            //ÒÀÀµ×¢Èë
+            //ä¾èµ–æ³¨å…¥
             services.AddSingleton<IAppService, AppService>();
             services.AddSingleton<IJobService, JobService>();
             services.AddSingleton<IJobLogService, JobLogService>();
+            services.AddSingleton<IAdminService, AdminService>();
+            services.AddSingleton<Blazor.Quartz.Web.Services.ICaptchaService, Blazor.Quartz.Web.Services.CaptchaService>();
 
             //services.AddScoped(sp =>
             //    new HttpClient
@@ -158,7 +182,7 @@ namespace Blazor.Quartz.Web
                 app.UseHsts();
             }
 
-            //ĞÄÌø¼ì²é
+            //å¿ƒè·³æ£€æŸ¥
             app.UseHealthChecks("/healthCheck",
             new HealthCheckOptions
             {
@@ -171,6 +195,9 @@ namespace Blazor.Quartz.Web
             // set service provider for non-DI created components (e.g. Quartz jobs created without DI)
             ServiceLocator.ServiceProvider = app.ApplicationServices;
 
+            //åˆå§‹åŒ–ç®¡ç†å‘˜è¡¨ï¼ˆè¡¨ä¸å­˜åœ¨æ—¶è‡ªåŠ¨åˆ›å»ºï¼Œè¡¨ä¸­æ— æ•°æ®æ—¶å†™å…¥é»˜è®¤ç®¡ç†å‘˜ï¼‰
+            app.ApplicationServices.GetRequiredService<IAdminService>().EnsureInitializedAsync().GetAwaiter().GetResult();
+
             // NOTE: replaced Flurl's HttpClientFactory configuration with IHttpClientFactory registration above
 
             app.UseHttpsRedirection();
@@ -181,8 +208,8 @@ namespace Blazor.Quartz.Web
             app.UseCors("AllowSameDomain");
 
             app.UseCookiePolicy();
-            //×¢Òâapp.UseAuthentication·½·¨Ò»¶¨Òª·ÅÔÚÏÂÃæµÄapp.UseMvc·½·¨Ç°Ãæ£¬·ñÕßºóÃæ¾ÍËãµ÷ÓÃHttpContext.SignInAsync½øĞĞÓÃ»§µÇÂ¼ºó£¬Ê¹ÓÃ
-            //HttpContext.User»¹ÊÇ»áÏÔÊ¾ÓÃ»§Ã»ÓĞµÇÂ¼£¬²¢ÇÒHttpContext.User.Claims¶ÁÈ¡²»µ½µÇÂ¼ÓÃ»§µÄÈÎºÎĞÅÏ¢¡£
+            //æ³¨æ„app.UseAuthenticationæ–¹æ³•ä¸€å®šè¦æ”¾åœ¨ä¸‹é¢çš„app.UseMvcæ–¹æ³•å‰é¢ï¼Œå¦è€…åé¢å°±ç®—è°ƒç”¨HttpContext.SignInAsyncè¿›è¡Œç”¨æˆ·ç™»å½•åï¼Œä½¿ç”¨
+            //HttpContext.Userè¿˜æ˜¯ä¼šæ˜¾ç¤ºç”¨æˆ·æ²¡æœ‰ç™»å½•ï¼Œå¹¶ä¸”HttpContext.User.Claimsè¯»å–ä¸åˆ°ç™»å½•ç”¨æˆ·çš„ä»»ä½•ä¿¡æ¯ã€‚
             app.UseAuthentication();
 
             app.UseAuthorization();
@@ -197,11 +224,11 @@ namespace Blazor.Quartz.Web
         }
 
         /// <summary>
-        /// ÈÕÖ¾ÅäÖÃ
+        /// æ—¥å¿—é…ç½®
         /// </summary>      
         private void LogConfig()
         {
-            //nugetµ¼Èë
+            //nugetå¯¼å…¥
             //Serilog.Extensions.Logging
             //Serilog.Sinks.File
             //Serilog.Sinks.Async
@@ -243,7 +270,7 @@ namespace Blazor.Quartz.Web
 
                                      }
                                  ))
-                                 //ËùÓĞÇé¿ö
+                                 //æ‰€æœ‰æƒ…å†µ
                                  .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => true)).WriteTo.Async(
                                      a =>
                                      {

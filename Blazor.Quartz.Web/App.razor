@@ -1,11 +1,15 @@
 ﻿
 <Router AppAssembly="@typeof(Program).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+            <NotAuthorized>
+                <RedirectToLogin />
+            </NotAuthorized>
+        </AuthorizeRouteView>
     </Found>
     <NotFound>
         <LayoutView Layout="@typeof(MainLayout)">
-            <Result Status="404" />
+            <Result Status="@ResultStatus.Http404" />
         </LayoutView>
     </NotFound>
 </Router>

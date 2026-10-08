@@ -1,8 +1,6 @@
-﻿using Flurl.Http.Configuration;
-using Polly;
+﻿using Polly;
 using Polly.Retry;
 using Polly.Timeout;
-using Polly.Wrap;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,58 +14,51 @@ namespace Blazor.Quartz.Common.PollyClient
 {
     public class Policies
     {
-        /// <summary>
-        /// 超时策略
-        /// </summary>
-        private AsyncTimeoutPolicy<HttpResponseMessage> TimeoutPolicy
-        {
-            get
-            {
-                return Policy.TimeoutAsync<HttpResponseMessage>(3, (context, span, task) =>
-                {
-                    //LoggerHelper.Info($"外部接口请求超时");
-                    return Task.CompletedTask;
-                });
-            }
-        }
+        private ResiliencePipeline<HttpResponseMessage> _pipeline;
 
         /// <summary>
-        /// 重试策略
+        /// 超时+重试组合策略（每次尝试3秒超时；非200或超时后按10/30/60秒重试3次，第3次重试时发送钉钉通知）
         /// </summary>
-        private AsyncRetryPolicy<HttpResponseMessage> RetryPolicy
+        public ResiliencePipeline<HttpResponseMessage> PolicyStrategy
         {
             get
             {
-                HttpStatusCode[] retryStatus =
+                if (_pipeline == null)
                 {
-                    HttpStatusCode.OK
-                };
-                return Policy
-                    .HandleResult<HttpResponseMessage>(r => !retryStatus.Contains(r.StatusCode))
-                    .Or<TimeoutRejectedException>()
-                    .WaitAndRetryAsync(new[]
-                    {
-                        // 表示重试3次，第一次1秒后重试，第二次2秒后重试，第三次4秒后重试
-                        TimeSpan.FromSeconds(10),
-                        TimeSpan.FromSeconds(30),
-                        TimeSpan.FromSeconds(60)
-                    }, (result, span, count, context) =>
-                    {
-                        if (count == 3)
+                    _pipeline = new ResiliencePipelineBuilder<HttpResponseMessage>()
+                        .AddRetry(new RetryStrategyOptions<HttpResponseMessage>
                         {
-                            Task.Run(async() =>
+                            MaxRetryAttempts = 3,
+                            DelayGenerator = args => ValueTask.FromResult<TimeSpan?>(args.AttemptNumber switch
                             {
-                               await DingTalkRobot.Robot.DingTalkRobot.SendTextMessage($"外部接口请求异常:{result.Exception}", null, false);
-                            });
-                            
-                            //LoggerHelper.Warn($"外部接口请求异常:{result.Exception}");
-                        }
-                    });
+                                0 => TimeSpan.FromSeconds(10),
+                                1 => TimeSpan.FromSeconds(30),
+                                _ => TimeSpan.FromSeconds(60)
+                            }),
+                            ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                                .HandleResult(r => r.StatusCode != HttpStatusCode.OK)
+                                .Handle<TimeoutRejectedException>(),
+                            OnRetry = args =>
+                            {
+                                if (args.AttemptNumber == 2)
+                                {
+                                    Task.Run(async() =>
+                                    {
+                                        await DingTalkRobot.Robot.DingTalkRobot.SendTextMessage($"外部接口请求异常:{args.Outcome.Exception}", null, false);
+                                    });
+                                }
+                                return ValueTask.CompletedTask;
+                            }
+                        })
+                        .AddTimeout(new TimeoutStrategyOptions
+                        {
+                            Timeout = TimeSpan.FromSeconds(3)
+                        })
+                        .Build();
+                }
+                return _pipeline;
             }
         }
-
-        public AsyncPolicyWrap<HttpResponseMessage> PolicyStrategy =>
-            Policy.WrapAsync(RetryPolicy, TimeoutPolicy);
     }
 
     public class PolicyHandler : DelegatingHandler
@@ -79,13 +70,16 @@ namespace Blazor.Quartz.Common.PollyClient
             _policies = policies;
         }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            return _policies.PolicyStrategy.ExecuteAsync(ct => base.SendAsync(request, ct), cancellationToken);
+            return await _policies.PolicyStrategy.ExecuteAsync(async ct => await base.SendAsync(request, ct), cancellationToken);
         }
     }
 
-    public class PollyHttpClientFactory : DefaultHttpClientFactory
+    /// <summary>
+    /// Flurl 4 移除了 DefaultHttpClientFactory 扩展点，改由标准 IHttpClientFactory（AddHttpMessageHandler<PolicyHandler>）注册策略
+    /// </summary>
+    public class PollyHttpClientFactory
     {
         private readonly Policies _policies;
 
@@ -94,12 +88,15 @@ namespace Blazor.Quartz.Common.PollyClient
             _policies = policies;
         }
 
-        public override HttpMessageHandler CreateMessageHandler()
+        /// <summary>
+        /// 创建应用了超时/重试策略的 HttpClient
+        /// </summary>
+        public HttpClient CreateHttpClient()
         {
-            return new PolicyHandler(_policies)
+            return new HttpClient(new PolicyHandler(_policies)
             {
-                InnerHandler = base.CreateMessageHandler()
-            };
+                InnerHandler = new HttpClientHandler()
+            });
         }
     }
 }

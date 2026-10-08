@@ -1,0 +1,9 @@
+@inject NavigationManager NavigationManager
+
+@code {
+    protected override void OnInitialized()
+    {
+        //未登录访问受限页面时重定向到登录页
+        NavigationManager.NavigateTo("/login");
+    }
+}

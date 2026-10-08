@@ -1,4 +1,5 @@
 ﻿@page "/"
+@attribute [Authorize]
 @using AntDesign.Charts
 @using Blazor.Quartz.Core.Service.App.Enum
 @using Microsoft.AspNetCore.SignalR.Client;
@@ -45,7 +46,7 @@
         </Card>
         </Col>
     </Row>
-    <Divider Orientation="left" Plain>作业执行统计</Divider>
+    <Divider Orientation="@DividerOrientation.Left" Plain>作业执行统计</Divider>
     <Row>
         <Col Span="24">
         @if (isshow)

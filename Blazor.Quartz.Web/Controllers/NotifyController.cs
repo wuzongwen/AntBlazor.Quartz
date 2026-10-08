@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,7 @@ namespace Blazor.Quartz.Web.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize]
     public class NotifyController : Controller
     {
         //private readonly IHubCallerClients<NotifyHub> _hub;
@@ -56,33 +58,6 @@ namespace Blazor.Quartz.Web.Controllers
             await _hub.Clients.All.SendAsync("Broadcast", name, message);
             
             return Content("通知成功");
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> NotifyLogin() 
-        {
-            var claims = new[] {
-                new Claim(ClaimTypes.NameIdentifier, "123456789"),
-                            new Claim(ClaimTypes.Name, "吴先生"),
-                            new Claim("UserId", "001")
-                        };
-
-            var claimsIdentity = new ClaimsIdentity(
-            claims,
-            CookieAuthenticationDefaults.AuthenticationScheme);
-
-            ClaimsPrincipal user = new ClaimsPrincipal(claimsIdentity);
-
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                user, new AuthenticationProperties()
-                {
-                    IsPersistent = true,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(180),
-                    AllowRefresh = true
-                });
-
-            return Json(new { code = "success", msg = "登陆成功" });
         }
     }
 }

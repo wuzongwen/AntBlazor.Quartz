@@ -3,6 +3,7 @@ using Blazor.Quartz.Core.Service.Base.Dto;
 using Blazor.Quartz.Core.Service.Timer;
 using Blazor.Quartz.Core.Service.Timer.Dto;
 using Blazor.Quartz.Core.Service.Timer.Enum;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Quartz;
@@ -19,6 +20,7 @@ namespace Blazor.Quartz.Web.Controllers
     /// </summary>
     [Route("api/[controller]/[Action]")]
     [EnableCors("AllowSameDomain")] //允许跨域 
+    [Authorize]
     public class JobController : Controller
     {
         private SchedulerCenter scheduler;

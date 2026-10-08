@@ -1,4 +1,5 @@
 @page "/job"
+@attribute [Authorize]
 @using Blazor.Quartz.Core.Service.Timer.Dto
 @using Blazor.Quartz.Core.Service.Timer
 @using Blazor.Quartz.Core.Service.App
@@ -41,7 +42,7 @@
     </PageHeaderExtra>
 </PageHeader>
 <div @key="tableKey">
-<Table DataSource="@jobItems" Bordered=@true Loading="@isLoading" Size=@TableSize.Middle>
+<Table DataSource="@jobItems" Bordered=@true Loading="@isLoading" Size=@TableSize.Middle HidePagination="@(jobItems == null || jobItems.Count == 0)">
     <Column @bind-Field="@context.GroupName" Title="应用"></Column>
     <Column @bind-Field="@context.Name"></Column>
     <Column @bind-Field="@context.NextFireTime"></Column>
@@ -102,7 +103,7 @@
                             break;
                         case "PAUSED":
                         case "PAUSED_BLOCKED":
-                            <Button Type="primary" Ghost OnClick="@(()=>Pause(context.GroupName,context.Name,AppStatusEnum.Enable))">
+                            <Button Type="@ButtonType.Primary" Ghost OnClick="@(()=>Pause(context.GroupName,context.Name,AppStatusEnum.Enable))">
                                 启用
                             </Button>
                             break;
@@ -167,7 +168,7 @@
     /// </summary>
     private void Cancel()
     {
-        //_message.Error("Clicked on No");
+        //await _message.ErrorAsync("Clicked on No");
     }
 
     protected override async Task OnInitializedAsync()
@@ -189,7 +190,7 @@
             //}
             //else
             //{
-            //await _message.Error("系统繁忙请稍后重试");
+            //await _message.ErrorAsync("系统繁忙请稍后重试");
             //}
             await LoadTable();
 
@@ -197,7 +198,7 @@
         }
         catch (Exception ex)
         {
-            await _message.Error(ex.Message);
+            await _message.ErrorAsync(ex.Message);
         }
     }
 
@@ -218,7 +219,7 @@
         var options = new DrawerOptions()
         {
             Title = "新增任务",
-            Width = 500,
+            Width = "500",
             BodyStyle = "paddingBottom: 80"
         };
 
@@ -284,11 +285,11 @@
         if (res.Code == 200)
         {
             await LoadTable();
-            await _message.Success(res.Msg, 0.5);
+            await _message.SuccessAsync(res.Msg, 0.5);
         }
         else
         {
-            await _message.Error(res.Msg);
+            await _message.ErrorAsync(res.Msg);
         }
     }
 
@@ -304,11 +305,11 @@
         if (res.Code == 200)
         {
             await LoadTable();
-            await _message.Success(res.Msg, 0.5);
+            await _message.SuccessAsync(res.Msg, 0.5);
         }
         else
         {
-            await _message.Error(res.Msg);
+            await _message.ErrorAsync(res.Msg);
         }
     }
 
@@ -321,7 +322,7 @@
         var options = new DrawerOptions()
         {
             Title = "查看日志",
-            Width = 800,
+            Width = "800",
             BodyStyle = "paddingBottom: 80"
         };
 
@@ -363,11 +364,11 @@
             isLoading = true;
             await LoadTable();
             isLoading = false;
-            await _message.Success("执行成功", 0.5);
+            await _message.SuccessAsync("执行成功", 0.5);
         }
         else
         {
-            await _message.Error("执行失败");
+            await _message.ErrorAsync("执行失败");
         }
     }
 

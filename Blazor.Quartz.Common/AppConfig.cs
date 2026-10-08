@@ -27,5 +27,13 @@ namespace Blazor.Quartz.Common
         public static int DefaultJobTimeout => Convert.ToInt32(ConfigurationManager.GetTryConfig("SysConfig:DefaultJobTimeout", "3600"));
         public static int QuartzMaxConcurrency => Math.Max(2, Convert.ToInt32(ConfigurationManager.GetTryConfig("Quartz:MaxConcurrency", "20")));
         public static int InfiniteTimeoutMaxConcurrency => Math.Max(1, Math.Min(Convert.ToInt32(ConfigurationManager.GetTryConfig("Quartz:InfiniteTimeoutMaxConcurrency", "2")), QuartzMaxConcurrency - 1));
+        /// <summary>
+        /// 默认管理员账号（仅在管理员表为空时用于初始化）
+        /// </summary>
+        public static string DefaultAdminUser => ConfigurationManager.GetTryConfig("SysConfig:DefaultAdminUser", "admin");
+        /// <summary>
+        /// 默认管理员密码（仅在管理员表为空时用于初始化）
+        /// </summary>
+        public static string DefaultAdminPassword => ConfigurationManager.GetTryConfig("SysConfig:DefaultAdminPassword", "123456");
     }
 }

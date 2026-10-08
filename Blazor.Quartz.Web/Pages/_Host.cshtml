@@ -3,10 +3,15 @@
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @{
     Layout = null;
+    // 用包 ProductVersion（含 git hash，每次包发布必变）做 cache-busting，NuGet 升级后浏览器自动拉取新资产，
+    // 避免旧缓存（如 Charts 0.2.1→0.9.0）与新组件混合执行导致 removeNullItem 递归爆栈
+    var antdVer = (System.Diagnostics.FileVersionInfo.GetVersionInfo(typeof(AntDesign.ConfigProvider).Assembly.Location).ProductVersion ?? "1").Replace('+', '-');
+    var chartsVer = (System.Diagnostics.FileVersionInfo.GetVersionInfo(typeof(AntDesign.Charts.Line).Assembly.Location).ProductVersion ?? "1").Replace('+', '-');
 }
 
 <!DOCTYPE html>
-<html lang="zh-cn">
+<!-- no-antblazor-js / no-antblazor-charts-js：禁用 AntDesign/AntDesign.Charts 的 lib.module.js 自动注入脚本（其去重检测不识别带 ?v= 的 src，会导致二次加载无参数 URL，命中浏览器旧缓存造成新旧 JS 混合执行爆栈）；脚本由本页手动按序加载并带版本参数 -->
+<html lang="zh-cn" no-antblazor-js no-antblazor-charts-js>
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,7 +19,7 @@
     <base href="~/" />
     <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
     <link href="css/site.css" rel="stylesheet" />
-    <link href="_content/AntDesign/css/ant-design-blazor.css" rel="stylesheet">
+    <link href="_content/AntDesign/css/ant-design-blazor.css?v=@antdVer" rel="stylesheet">
 </head>
 <body>
     <app>
@@ -29,8 +34,9 @@
 
     <script src="_framework/blazor.server.js" autostart="false"></script>
     <script src="/boot.js"></script>
-    <script src="_content/AntDesign/js/ant-design-blazor.js"></script>
-    <script src="_content/AntDesign.Charts/g2plot.js"></script>
-    <script src="_content/AntDesign.Charts/ant-design-charts-blazor.js"></script>
+    <script src="js/login.js"></script>
+    <script src="_content/AntDesign/js/ant-design-blazor.js?v=@antdVer"></script>
+    <script src="_content/AntDesign.Charts/g2plot.min.js?v=@chartsVer"></script>
+    <script src="_content/AntDesign.Charts/ant-design-charts-blazor.js?v=@chartsVer"></script>
 </body>
 </html>
