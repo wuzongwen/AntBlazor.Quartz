@@ -2,6 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <IsTransformWebConfigDisabled>false</IsTransformWebConfigDisabled>
+	<SatelliteResourceLanguages>zh-Hans</SatelliteResourceLanguages>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="File\**" />
