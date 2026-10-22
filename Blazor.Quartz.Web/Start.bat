@@ -1,0 +1,1 @@
+dotnet Blazor.Quartz.Web.dll --urls "http://0.0.0.0:8008"
